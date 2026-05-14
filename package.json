@@ -1,0 +1,8 @@
+{
+  "name": "cineflow",
+  "version": "1.0.0",
+  "description": "CineFlow — App Cinema con Modalità Detective AI",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
