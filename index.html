@@ -1,0 +1,2758 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineFlow v5.0</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+  font-family: 'DM Sans', sans-serif;
+}
+.dev-note {
+  width: 375px;
+  background: #1a1a24;
+  border: 0.5px solid #e8b44a44;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  color: #e8b44a;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.dev-note strong { font-weight: 600; display: block; margin-bottom: 4px; }
+.dev-note ul { padding-left: 16px; color: #bbb; margin-top: 6px; }
+.dev-note li { margin-bottom: 3px; }
+:root {
+  --bg:#0a0a0f; --bg2:#111118; --bg3:#1a1a24; --bg4:#22222e;
+  --accent:#e8b44a; --accent2:#c94040;
+  --text:#f0ede8; --muted:#888; --card-r:12px;
+}
+#app {
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg); color:var(--text);
+  width:375px; min-height:820px;
+  border-radius:28px; overflow:hidden;
+  position:relative; border:0.5px solid #2a2a35;
+}
+.screen { display:none; flex-direction:column; min-height:820px; }
+.screen.active { display:flex; }
+.ob-screen { display:none; flex-direction:column; min-height:820px; }
+.ob-screen.active { display:flex; }
+.scroll-area { flex:1; overflow-y:auto; padding-bottom:80px; }
+.scroll-area::-webkit-scrollbar { display:none; }
+.ob-scroll { flex:1; overflow-y:auto; padding-bottom:32px; }
+.ob-scroll::-webkit-scrollbar { display:none; }
+
+/* NAV */
+.bottom-nav {
+  position:absolute; bottom:0; left:0; right:0; height:70px;
+  background:rgba(10,10,15,0.96); border-top:0.5px solid #2a2a35;
+  display:flex; align-items:center; justify-content:space-around;
+  padding:0 8px 10px; z-index:20;
+}
+.nav-btn { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 12px; border-radius:10px; border:none; background:none; }
+.nav-btn i { font-size:20px; color:var(--muted); }
+.nav-btn span { font-size:9px; color:var(--muted); font-weight:500; font-family:'DM Sans',sans-serif; }
+.nav-btn.active i,.nav-btn.active span { color:var(--accent); }
+
+/* TOPBAR */
+.topbar { padding:48px 20px 16px; background:var(--bg); position:sticky; top:0; z-index:10; }
+.logo { font-family:'Playfair Display',serif; font-size:22px; color:var(--accent); }
+.logo span { color:var(--accent2); }
+
+/* SECTIONS */
+.section { padding:20px 20px 0; }
+.section-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; }
+.section-title { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; }
+.see-all { font-size:12px; color:var(--accent); cursor:pointer; }
+
+/* H-SCROLL */
+.h-scroll { display:flex; gap:12px; overflow-x:auto; padding:0 20px 4px; }
+.h-scroll::-webkit-scrollbar { display:none; }
+
+/* FILM CARDS */
+.film-card { flex-shrink:0; width:110px; cursor:pointer; transition:transform 0.15s; }
+.film-card:active { transform:scale(0.96); }
+.film-poster { width:110px; height:160px; border-radius:var(--card-r); overflow:hidden; position:relative; }
+.film-badge { position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.75); border-radius:6px; padding:2px 7px; font-size:10px; font-weight:500; color:var(--accent); }
+.film-title { font-size:12px; font-weight:500; margin-top:8px; line-height:1.3; }
+.film-year { font-size:11px; color:var(--muted); margin-top:2px; }
+.sdots { position:absolute; bottom:6px; left:6px; right:6px; display:flex; gap:4px; }
+.sdot { width:16px; height:16px; border-radius:50%; font-size:7px; display:flex; align-items:center; justify-content:center; font-weight:700; border:1px solid rgba(255,255,255,0.2); }
+
+/* "PER TE" CARD — più grande */
+.forte-card { flex-shrink:0; width:145px; cursor:pointer; transition:transform 0.15s; }
+.forte-card:active { transform:scale(0.96); }
+.forte-poster { width:145px; height:210px; border-radius:var(--card-r); overflow:hidden; position:relative; }
+.forte-match { position:absolute; top:8px; right:8px; background:var(--accent); color:#000; border-radius:8px; padding:3px 8px; font-size:10px; font-weight:700; }
+.forte-why { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(to top,rgba(0,0,0,0.92) 60%,transparent); padding:8px; }
+.forte-why-label { font-size:9px; color:#aaa; line-height:1.4; }
+.forte-title { font-size:12px; font-weight:600; margin-top:7px; line-height:1.3; }
+.forte-year { font-size:11px; color:var(--muted); margin-top:2px; }
+
+/* PLAYLIST */
+.playlist-card { flex-shrink:0; width:150px; cursor:pointer; }
+.playlist-cover { width:150px; height:150px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:1px; border-radius:var(--card-r); overflow:hidden; background:var(--bg3); }
+.playlist-cover-cell { background:var(--bg3); overflow:hidden; }
+.playlist-label { font-size:11px; font-weight:500; margin-top:7px; }
+.playlist-sub { font-size:10px; color:var(--muted); margin-top:2px; }
+
+/* MOOD */
+.mood-card { margin:0 20px; border-radius:18px; overflow:hidden; padding:20px; border:0.5px solid #2a2a35; background:var(--bg2); }
+.mood-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.mood-btn { border:none; border-radius:14px; padding:12px 10px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500; display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform 0.15s; }
+.mood-btn:active { transform:scale(0.95); }
+.mood-btn i { font-size:22px; }
+.mood-active { outline:2px solid var(--accent); outline-offset:2px; }
+.m-felice{background:#1a2a10;color:#7ec84a;} .m-triste{background:#0d1a2a;color:#4a90d9;}
+.m-adrenalina{background:#2a0a0a;color:#e05555;} .m-romantico{background:#2a0a20;color:#d96096;}
+.m-pensieroso{background:#1a1a0a;color:#c8a030;} .m-spaventato{background:#1a0a2a;color:#9060c8;}
+.m-nostalgico{background:#1a1205;color:#c87030;} .m-avventura{background:#051a1a;color:#30c8a0;}
+.mood-result { margin:12px 20px 0; border-radius:14px; background:var(--bg3); padding:14px; border:0.5px solid #2a2a35; display:none; }
+.mood-result.visible { display:block; }
+.result-header { font-size:11px; color:var(--muted); margin-bottom:10px; font-weight:500; }
+.result-films { display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
+.result-films::-webkit-scrollbar { display:none; }
+.result-film { flex-shrink:0; cursor:pointer; }
+.result-poster { width:80px; height:116px; border-radius:9px; position:relative; overflow:hidden; }
+.result-title { font-size:11px; font-weight:500; margin-top:6px; width:80px; line-height:1.3; }
+.result-rating { font-size:10px; color:var(--accent); margin-top:2px; }
+
+/* DETAIL */
+.detail-hero { height:220px; position:relative; flex-shrink:0; }
+.detail-hero-grad { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(10,10,15,0.2),rgba(10,10,15,0.96)); }
+.back-btn { position:absolute; top:48px; left:16px; z-index:5; background:rgba(0,0,0,0.5); border:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text); }
+.detail-scroll { flex:1; overflow-y:auto; padding:16px 20px 80px; }
+.detail-scroll::-webkit-scrollbar { display:none; }
+.detail-title { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; line-height:1.2; }
+.detail-meta-row { display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.detail-tag { background:var(--bg3); border-radius:6px; padding:3px 9px; font-size:11px; color:var(--muted); }
+.detail-rating { display:flex; align-items:center; gap:4px; font-size:13px; color:var(--accent); font-weight:600; }
+.detail-synopsis { font-size:13px; color:#bbb; line-height:1.65; margin-top:14px; }
+.action-row { display:flex; gap:8px; margin-top:16px; }
+.btn-outline { display:flex; align-items:center; gap:6px; background:none; border:0.5px solid #2a2a35; color:var(--text); border-radius:20px; padding:9px 14px; font-size:12px; font-weight:500; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.2s; }
+.btn-outline:hover { background:var(--bg3); }
+.btn-outline.flex1 { flex:1; justify-content:center; }
+.btn-outline.active-heart { border-color:var(--accent2); color:var(--accent2); }
+.btn-outline.active-list { border-color:var(--accent); color:var(--accent); }
+.watch-title { font-size:13px; color:var(--muted); margin-bottom:10px; font-weight:500; }
+.streaming-list { display:flex; gap:10px; flex-wrap:wrap; }
+.streaming-badge { display:flex; align-items:center; gap:6px; border:0.5px solid #2a2a35; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; }
+.trailer-btn { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.06); border:0.5px solid rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text); margin-top:12px; width:100%; transition:background 0.2s; }
+.trailer-btn:hover { background:rgba(255,255,255,0.11); }
+.trailer-btn i:first-child { font-size:20px; color:var(--accent2); }
+.trailer-label { flex:1; }
+.trailer-dur { font-size:11px; color:var(--muted); }
+
+/* AFFINITÀ BADGE nella scheda */
+.affinity-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.affinity-pill { display:inline-flex; align-items:center; gap:4px; background:var(--bg3); border:0.5px solid #2a2a35; border-radius:20px; padding:4px 10px; font-size:11px; color:var(--muted); }
+.affinity-pill.match { border-color:var(--accent); color:var(--accent); background:rgba(232,180,74,0.08); }
+.affinity-pill i { font-size:13px; }
+
+/* CAST */
+.cast-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+.cast-row::-webkit-scrollbar { display:none; }
+.person-card { flex-shrink:0; width:72px; text-align:center; cursor:pointer; }
+.person-avatar { width:56px; height:56px; border-radius:50%; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; border:2px solid transparent; transition:border-color 0.2s; }
+.person-card:hover .person-avatar { border-color:var(--accent); }
+.person-name { font-size:11px; font-weight:500; color:var(--accent); text-decoration:underline; text-underline-offset:2px; line-height:1.3; }
+.person-role { font-size:10px; color:var(--muted); margin-top:2px; }
+
+/* SEARCH */
+.search-bar { margin:0 20px 16px; background:var(--bg3); border-radius:10px; display:flex; align-items:center; gap:10px; padding:10px 14px; border:0.5px solid #2a2a35; }
+.search-bar i { color:var(--muted); font-size:18px; }
+.search-bar input { background:none; border:none; outline:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; flex:1; }
+.search-bar input::placeholder { color:var(--muted); }
+.genre-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 20px; }
+.genre-tile { border-radius:10px; padding:16px; font-size:14px; font-weight:500; cursor:pointer; position:relative; overflow:hidden; min-height:60px; display:flex; align-items:flex-end; color:#fff; }
+.genre-tile i { position:absolute; right:12px; top:12px; font-size:24px; opacity:0.4; }
+.g-action{background:linear-gradient(135deg,#3a1010,#c94040);} .g-drama{background:linear-gradient(135deg,#0d1f3a,#185fa5);}
+.g-scifi{background:linear-gradient(135deg,#0d1a2a,#1d9e75);} .g-thriller{background:linear-gradient(135deg,#1a1007,#634806);}
+.g-comedy{background:linear-gradient(135deg,#1a0d00,#e8b44a);color:#2a1a00 !important;} .g-horror{background:linear-gradient(135deg,#1a0010,#9a2060);}
+
+/* LIST ITEMS */
+.list-item { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:0.5px solid #1a1a24; cursor:pointer; }
+.list-thumb { width:44px; height:60px; border-radius:7px; flex-shrink:0; }
+.list-info { flex:1; }
+.list-title2 { font-size:13px; font-weight:500; }
+.list-meta2 { font-size:11px; color:var(--muted); margin-top:3px; }
+.list-rating2 { font-size:11px; color:var(--accent); }
+
+/* PROFILE */
+.profile-header { padding:48px 20px 20px; text-align:center; }
+.profile-avatar-dynamic { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; margin:0 auto 12px; }
+.profile-name { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; }
+.profile-stats { display:flex; justify-content:center; gap:32px; margin-top:16px; }
+.pstat { text-align:center; }
+.pstat-num { font-size:18px; font-weight:700; color:var(--accent); font-family:'Playfair Display',serif; }
+.pstat-lbl { font-size:10px; color:var(--muted); margin-top:2px; }
+.share-btn { display:flex; align-items:center; gap:8px; margin:16px auto 0; background:none; border:1px solid var(--accent); color:var(--accent); border-radius:20px; padding:8px 20px; font-size:13px; font-weight:500; cursor:pointer; font-family:'DM Sans',sans-serif; }
+
+/* FILMOGRAFIA */
+.filmog-header { padding:48px 20px 0; }
+.filmog-person { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.filmog-avatar { width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; flex-shrink:0; }
+.filmog-name { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; }
+.filmog-role-badge { display:inline-block; background:var(--bg3); border-radius:14px; padding:4px 12px; font-size:11px; color:var(--accent); margin-top:4px; }
+.filmog-stats { display:flex; gap:20px; margin-bottom:16px; }
+.fstat { text-align:center; }
+.fstat-num { font-size:16px; font-weight:700; color:var(--accent); font-family:'Playfair Display',serif; }
+.fstat-lbl { font-size:10px; color:var(--muted); }
+.filter-row { display:flex; gap:8px; overflow-x:auto; padding:0 20px 14px; }
+.filter-row::-webkit-scrollbar { display:none; }
+.filter-pill { flex-shrink:0; border-radius:16px; padding:5px 14px; font-size:12px; cursor:pointer; border:none; font-family:'DM Sans',sans-serif; }
+.filter-pill.active { background:var(--accent); color:#000; font-weight:600; }
+.filter-pill.inactive { background:var(--bg3); color:var(--muted); }
+.filmog-list-item { display:flex; align-items:center; gap:12px; padding:10px 20px; border-bottom:0.5px solid #1a1a24; cursor:pointer; }
+.filmog-thumb { width:44px; height:60px; border-radius:7px; flex-shrink:0; }
+.filmog-info { flex:1; }
+.filmog-film-title { font-size:13px; font-weight:500; }
+.filmog-film-meta { font-size:11px; color:var(--muted); margin-top:3px; }
+.filmog-film-rating { font-size:11px; color:var(--accent); }
+.filmog-role-tag { display:inline-block; background:var(--bg3); border-radius:5px; padding:2px 7px; font-size:10px; color:var(--muted); margin-top:4px; }
+
+/* ONBOARDING */
+.sdot2 { width:6px; height:6px; border-radius:50%; background:var(--bg3); transition:all 0.3s; display:inline-block; }
+.sdot2.active { width:18px; border-radius:3px; background:var(--accent); }
+.sdot2.done { background:var(--accent); opacity:0.4; }
+.ob-title { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; line-height:1.2; }
+.ob-sub { font-size:13px; color:var(--muted); line-height:1.55; margin-top:6px; }
+.ob-input { background:var(--bg3); border:0.5px solid #2a2a35; border-radius:10px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; padding:11px 14px; width:100%; outline:none; transition:border-color 0.2s; }
+.ob-input:focus { border-color:var(--accent); }
+.ob-input::placeholder { color:var(--muted); }
+.ob-label { font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:500; }
+.btn-cta { width:100%; padding:14px; background:var(--accent); color:#000; font-weight:700; font-size:14px; border:none; border-radius:12px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity 0.2s; }
+.btn-cta:disabled { opacity:0.35; cursor:not-allowed; }
+.btn-cta:not(:disabled):hover { opacity:0.9; }
+.btn-ghost { width:100%; padding:11px; background:none; color:var(--muted); font-size:13px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.color-dot { width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:transform 0.15s,border-color 0.2s; display:inline-block; }
+.color-dot:hover { transform:scale(1.15); }
+.color-dot.selected { border-color:#fff; }
+.genre-pill2 { border-radius:20px; padding:7px 14px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid #2a2a35; background:var(--bg3); color:var(--muted); transition:all 0.2s; display:inline-flex; align-items:center; gap:5px; }
+.genre-pill2.selected { background:var(--accent); color:#000; border-color:var(--accent); }
+.ob-mood-btn { border:none; border-radius:14px; padding:14px 10px; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; flex-direction:column; align-items:center; gap:6px; transition:transform 0.15s,outline 0.1s; outline:2px solid transparent; outline-offset:2px; }
+.ob-mood-btn:active { transform:scale(0.95); }
+.ob-mood-btn.selected { outline-color:var(--accent); }
+.ob-mood-btn i { font-size:24px; }
+.ob-mood-btn span { font-size:12px; font-weight:500; }
+.fg-card { cursor:pointer; position:relative; border-radius:10px; overflow:hidden; aspect-ratio:2/3; transition:transform 0.15s; }
+.fg-card:active { transform:scale(0.96); }
+.fg-card-selected::after { content:''; position:absolute; inset:0; border:2.5px solid var(--accent); border-radius:10px; pointer-events:none; }
+.fg-check { position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; background:var(--accent); display:none; align-items:center; justify-content:center; z-index:2; }
+.fg-check i { font-size:12px; color:#000; }
+.fg-card-selected .fg-check { display:flex; }
+.fg-poster-title { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(to top,rgba(0,0,0,0.9) 60%,transparent); padding:8px 6px 6px; font-size:10px; font-weight:500; line-height:1.3; }
+.fg-year { font-size:9px; color:var(--muted); }
+.welcome-hero { height:200px; position:relative; background:linear-gradient(135deg,#1a1030,#533ab7,#c94040); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.welcome-logo { font-family:'Playfair Display',serif; font-size:42px; color:#fff; }
+.welcome-logo em { color:var(--accent); font-style:normal; }
+
+/* ── POSTER GRADIENTS aggiuntivi ── */
+.p9  { background: linear-gradient(135deg, #0f1a2a, #1a4a6a); }
+.p10 { background: linear-gradient(135deg, #1a0a2a, #5a1a8a); }
+.p11 { background: linear-gradient(135deg, #0a1a0a, #1a5a2a); }
+.p12 { background: linear-gradient(135deg, #2a1a00, #6a3a00); }
+.p3{background:linear-gradient(135deg,#2a0010,#c94040);} .p4{background:linear-gradient(135deg,#0d1535,#185fa5);}
+.p5{background:linear-gradient(135deg,#1a1500,#c89030);} .p6{background:linear-gradient(135deg,#1a0500,#994020);}
+.p7{background:linear-gradient(135deg,#0a1a1a,#0f6e56);} .p8{background:linear-gradient(135deg,#1a0a20,#993556);}
+.av-cn{background:linear-gradient(135deg,#533ab7,#185fa5);} .av-cm{background:linear-gradient(135deg,#c94040,#994020);}
+.av-md{background:linear-gradient(135deg,#1d7a35,#0f6e56);} .av-eb{background:linear-gradient(135deg,#c89030,#994020);}
+
+/* SEARCH MOOD BUTTONS — griglia 4 col, compatti */
+.search-mood-btn {
+  border:none; border-radius:12px; padding:10px 4px 8px; cursor:pointer;
+  font-family:'DM Sans',sans-serif; display:flex; flex-direction:column;
+  align-items:center; gap:4px; transition:transform 0.15s, outline 0.1s;
+  outline:2px solid transparent; outline-offset:2px;
+}
+.search-mood-btn:active { transform:scale(0.95); }
+.search-mood-btn.active-mood { outline-color:var(--accent); }
+.search-mood-btn i { font-size:20px; }
+.search-mood-btn span { font-size:10px; font-weight:500; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.fade-in { animation:fadeIn 0.3s ease forwards; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.ai-loading { animation:pulse 1.2s ease infinite; }
+@keyframes aiProgress {
+  0%   { width:15%; margin-left:0; }
+  50%  { width:40%; margin-left:30%; }
+  100% { width:15%; margin-left:85%; }
+}
+@keyframes detectivePulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(232,180,74,0.4); }
+  50%     { box-shadow: 0 0 0 6px rgba(232,180,74,0); }
+}
+/* Esempi cliccabili nella Modalità Detective */
+.detective-example {
+  flex-shrink:0; background:rgba(232,180,74,0.08); border:0.5px solid rgba(232,180,74,0.2);
+  border-radius:20px; padding:5px 12px; font-size:11px; color:#c8a050;
+  cursor:pointer; white-space:nowrap; transition:background 0.15s;
+}
+.detective-example:hover { background:rgba(232,180,74,0.16); }
+/* Clue tag durante l'elaborazione */
+.detective-clue {
+  background:var(--bg3); border:0.5px solid #2a2a35; border-radius:14px;
+  padding:4px 10px; font-size:11px; color:var(--muted);
+  animation:fadeIn 0.4s ease forwards;
+}
+
+/* ═══ ANIMAZIONI TRANSIZIONI ═══ */
+.screen { transition: opacity 0.25s ease; }
+@keyframes slideInRight { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:none} }
+@keyframes slideInUp    { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+@keyframes slideOutLeft { from{opacity:1;transform:none} to{opacity:0;transform:translateX(-20px)} }
+.screen.active  { animation: slideInRight 0.28s ease forwards; }
+.screen.slide-up { animation: slideInUp 0.28s ease forwards; }
+
+/* ═══ TOAST NOTIFICATION ═══ */
+#toast {
+  position:absolute; bottom:84px; left:16px; right:16px; z-index:100;
+  background:var(--bg3); border:0.5px solid #2a2a35; border-radius:12px;
+  padding:12px 14px; display:flex; align-items:center; gap:10px;
+  transform:translateY(20px); opacity:0;
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;
+}
+#toast.show { transform:translateY(0); opacity:1; pointer-events:auto; }
+#toast i { font-size:18px; flex-shrink:0; }
+#toast .toast-text { flex:1; font-size:12px; line-height:1.4; }
+#toast .toast-action { font-size:12px; color:var(--accent); font-weight:600; cursor:pointer; flex-shrink:0; }
+
+/* ═══ PAYWALL OVERLAY ═══ */
+#paywall-overlay {
+  display:none; position:absolute; inset:0; z-index:200;
+  background:rgba(10,10,15,0.92);
+  align-items:flex-end; justify-content:center;
+}
+#paywall-overlay.show { display:flex; animation:slideInUp 0.35s ease forwards; }
+.paywall-sheet {
+  width:100%; background:var(--bg2);
+  border-radius:24px 24px 0 0; padding:24px 20px 40px;
+  border-top:0.5px solid #2a2a35;
+}
+.paywall-handle { width:36px; height:4px; background:var(--bg4); border-radius:2px; margin:0 auto 20px; }
+.paywall-icon { width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:26px; color:#000; }
+.paywall-title { font-family:'Playfair Display',serif; font-size:22px; font-weight:700; text-align:center; margin-bottom:6px; }
+.paywall-sub { font-size:13px; color:var(--muted); text-align:center; line-height:1.5; margin-bottom:20px; }
+.paywall-features { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+.paywall-feat { display:flex; align-items:center; gap:10px; font-size:13px; }
+.paywall-feat i { font-size:16px; color:var(--accent); }
+.paywall-cta { width:100%; padding:14px; background:var(--accent); color:#000; font-weight:700; font-size:14px; border:none; border-radius:12px; cursor:pointer; font-family:'DM Sans',sans-serif; margin-bottom:10px; }
+.paywall-trial { font-size:12px; color:var(--muted); text-align:center; margin-bottom:10px; }
+.paywall-trial span { color:var(--accent); }
+.paywall-dismiss { width:100%; padding:10px; background:none; border:0.5px solid #2a2a35; border-radius:12px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; color:var(--muted); }
+
+/* ═══ IMPOSTAZIONI ═══ */
+.settings-row {
+  display:flex; align-items:center; gap:12px;
+  padding:14px 20px; border-bottom:0.5px solid #1a1a24; cursor:pointer;
+}
+.settings-row:last-child { border-bottom:none; }
+.settings-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:17px; }
+.settings-label { flex:1; font-size:14px; font-weight:500; }
+.settings-sub { font-size:11px; color:var(--muted); margin-top:2px; }
+.settings-chevron { color:var(--muted); font-size:16px; }
+.toggle-wrap { position:relative; width:44px; height:26px; }
+.toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
+.toggle-slider { position:absolute; inset:0; background:var(--bg4); border-radius:13px; transition:background 0.2s; cursor:pointer; }
+.toggle-slider:before { content:''; position:absolute; width:20px; height:20px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:transform 0.2s; }
+.toggle-wrap input:checked + .toggle-slider { background:var(--accent); }
+.toggle-wrap input:checked + .toggle-slider:before { transform:translateX(18px); }
+.settings-section-title { font-size:12px; color:var(--muted); font-weight:500; padding:16px 20px 6px; }
+.detective-counter { display:flex; align-items:center; gap:6px; }
+.dc-dot { width:8px; height:8px; border-radius:50%; }
+.dc-dot.used { background:var(--bg4); }
+.dc-dot.avail { background:var(--accent); }
+
+
+/* ═══ DETECTIVE BANNER ═══ */
+@keyframes detectiveShimmer {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(300%) skewX(-15deg); }
+}
+@keyframes detectiveBreathe {
+  0%,100% { box-shadow: 0 0 0 0 rgba(232,180,74,0.0), 0 8px 32px rgba(0,0,0,0.4); }
+  50%     { box-shadow: 0 0 24px 4px rgba(232,180,74,0.22), 0 8px 32px rgba(0,0,0,0.4); }
+}
+@keyframes detectiveFloat {
+  0%,100% { transform: translateY(0px); }
+  50%     { transform: translateY(-4px); }
+}
+@keyframes detectiveScanline {
+  0%   { top: -10%; }
+  100% { top: 110%; }
+}
+.detective-banner {
+  margin: 0 20px 20px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #241a04, #1a1208, #0e0c06);
+  border: 1.5px solid rgba(232,180,74,0.5);
+  padding: 20px 18px 16px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  animation: detectiveBreathe 3s ease-in-out infinite;
+  transition: transform 0.15s, border-color 0.25s;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(232,180,74,0.15);
+}
+.detective-banner:active { transform: scale(0.97); }
+.detective-banner:hover  { border-color: rgba(232,180,74,0.85); }
+/* Shimmer più visibile */
+.detective-banner-shimmer {
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(232,180,74,0.12) 50%, transparent 70%);
+  animation: detectiveShimmer 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+/* Scanline sottile */
+.detective-banner-scanline {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(232,180,74,0.15), transparent);
+  animation: detectiveScanline 4s linear infinite;
+  pointer-events: none;
+}
+.detective-banner-bg-icon {
+  position: absolute; right: -4px; bottom: -16px;
+  font-size: 110px; opacity: 0.07; line-height: 1;
+  pointer-events: none; user-select: none;
+  filter: grayscale(1) brightness(2);
+}
+.detective-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(232,180,74,0.18); border: 0.5px solid rgba(232,180,74,0.5);
+  border-radius: 20px; padding: 4px 12px;
+  font-size: 10px; font-weight: 700; color: var(--accent);
+  letter-spacing: 1px; text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.detective-banner-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--text); margin-bottom: 6px; line-height: 1.2;
+}
+.detective-banner-title em { color: var(--accent); font-style: normal; }
+.detective-banner-tagline {
+  font-size: 13px; color: #c8a050; font-weight: 500;
+  margin-bottom: 4px; line-height: 1.4;
+}
+.detective-banner-sub {
+  font-size: 12px; color: #806030; line-height: 1.5; margin-bottom: 16px;
+}
+.detective-banner-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.detective-banner-hints { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.detective-hint-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(232,180,74,0.1); border: 0.5px solid rgba(232,180,74,0.25);
+  border-radius: 20px; padding: 5px 11px; font-size: 11px; color: #c8a050;
+}
+.detective-banner-cta {
+  flex-shrink: 0; background: var(--accent); color: #000;
+  border: none; border-radius: 22px; padding: 11px 22px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; gap: 7px;
+  animation: detectiveFloat 2.5s ease-in-out infinite;
+  box-shadow: 0 4px 14px rgba(232,180,74,0.35);
+}
+.detective-banner-cta i { font-size: 15px; }
+.detective-counter-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 14px; padding-top: 12px;
+  border-top: 0.5px solid rgba(232,180,74,0.18);
+}
+.dc-pip { width:8px; height:8px; border-radius:50%; transition: background 0.3s; }
+.dc-pip.avail { background: var(--accent); box-shadow: 0 0 4px rgba(232,180,74,0.5); }
+.dc-pip.used  { background: rgba(232,180,74,0.15); }
+.detective-counter-label { font-size: 11px; color: #806030; margin-left: 4px; flex: 1; }
+.detective-counter-plus { font-size: 11px; color: var(--accent); font-weight: 600; cursor: pointer; }
+
+/* ═══ AKINATOR STYLE — domande progressive ═══ */
+.aki-question-box {
+  background: linear-gradient(135deg,#1c1508,#2a1e06);
+  border: 0.5px solid rgba(232,180,74,0.3);
+  border-radius: 16px; padding: 16px;
+  animation: fadeIn 0.3s ease;
+}
+.aki-question-text {
+  font-size: 15px; font-weight: 600; color: var(--text);
+  line-height: 1.4; margin-bottom: 14px; text-align: center;
+}
+.aki-options { display: flex; flex-direction: column; gap: 8px; }
+.aki-option {
+  background: rgba(232,180,74,0.06); border: 0.5px solid rgba(232,180,74,0.2);
+  border-radius: 10px; padding: 11px 14px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.aki-option:hover { background: rgba(232,180,74,0.12); border-color: rgba(232,180,74,0.5); }
+.aki-option i { font-size: 16px; color: var(--accent); flex-shrink: 0; }
+.aki-option-free {
+  width: 100%; background: rgba(0,0,0,0.3);
+  border: 0.5px solid rgba(232,180,74,0.2);
+  border-radius: 10px; padding: 10px 12px;
+  color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; outline: none; margin-top: 8px;
+  transition: border-color 0.2s;
+}
+.aki-option-free:focus { border-color: rgba(232,180,74,0.6); }
+.aki-option-free::placeholder { color: var(--muted); }
+.aki-progress {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+}
+.aki-progress-bar {
+  flex: 1; height: 3px; background: var(--bg3);
+  border-radius: 2px; overflow: hidden;
+}
+.aki-progress-fill {
+  height: 100%; background: var(--accent);
+  border-radius: 2px; transition: width 0.4s ease;
+}
+.aki-step-label { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+
+</style>
+</head>
+<body>
+
+<div class="dev-note">
+  <strong>CineFlow v5.1 — Banner Detective + Database espanso</strong>
+  <ul>
+    <li>Banner Detective prominente con shimmer, breathing glow e counter pips</li>
+    <li>49 film nel database (dai classici del 1988 ai titoli 2025)</li>
+    <li>50 film nel pool onboarding — griglia molto più ricca e varia</li>
+    <li>Paywall con trial 7 giorni — scatta alla 3ª indagine esaurita</li>
+    <li>Toast notification + Schermata Impostazioni completa</li>
+    <li>Animazioni transizioni fluide tra schermate</li>
+  </ul>
+</div>
+
+<div id="app">
+
+<!-- ══ ONBOARDING ══ -->
+
+<!-- OB1 -->
+<div class="ob-screen active" id="ob1">
+  <div class="welcome-hero"><div class="welcome-logo">Cine<em>Flow</em></div></div>
+  <div class="ob-scroll" style="padding:28px 20px 24px;">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:24px;">
+      <div class="sdot2 active"></div><div class="sdot2"></div><div class="sdot2"></div><div class="sdot2"></div>
+    </div>
+    <div class="ob-title">Benvenuto su<br>CineFlow</div>
+    <div class="ob-sub" style="margin-top:8px;">Creiamo il tuo profilo per consigliarti film perfetti, basati sui tuoi gusti reali.</div>
+    <div style="margin-top:28px;display:flex;flex-direction:column;gap:14px;">
+      <div><div class="ob-label">Il tuo nome</div><input class="ob-input" id="inp-name" type="text" placeholder="Come ti chiami?" oninput="checkOb1()"></div>
+      <div><div class="ob-label">Username</div><input class="ob-input" id="inp-user" type="text" placeholder="@nomeutente" oninput="checkOb1()"></div>
+      <div><div class="ob-label">Città (opzionale)</div><input class="ob-input" id="inp-city" type="text" placeholder="es. Roma"></div>
+    </div>
+    <div style="margin-top:28px;">
+      <button class="btn-cta" id="btn-ob1" disabled onclick="goOb(2)">Continua</button>
+      <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:12px;line-height:1.5;">Creando il profilo accetti i <span style="color:var(--accent);">Termini</span> e la <span style="color:var(--accent);">Privacy policy</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- OB2 -->
+<div class="ob-screen" id="ob2">
+  <div style="padding:48px 20px 20px;">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:24px;">
+      <div class="sdot2 done"></div><div class="sdot2 active"></div><div class="sdot2"></div><div class="sdot2"></div>
+    </div>
+    <div class="ob-title">Il tuo avatar</div>
+    <div class="ob-sub">Scegli colore e iniziali per il tuo profilo.</div>
+  </div>
+  <div class="ob-scroll" style="padding:0 20px 24px;">
+    <div style="margin:12px 0 28px;text-align:center;">
+      <div id="ob-avatar-preview" onclick="autoFillInitials()"
+        style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;margin:0 auto;background:linear-gradient(135deg,#e8b44a,#c94040);color:#000;cursor:pointer;">M</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Tocca per usare le tue iniziali</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;">
+        <div class="color-dot selected" style="background:linear-gradient(135deg,#e8b44a,#c94040);" onclick="setAvatarColor(this,'linear-gradient(135deg,#e8b44a,#c94040)','#000')"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,#533ab7,#185fa5);" onclick="setAvatarColor(this,'linear-gradient(135deg,#533ab7,#185fa5)','#fff')"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,#1d7a35,#0f6e56);" onclick="setAvatarColor(this,'linear-gradient(135deg,#1d7a35,#0f6e56)','#fff')"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,#c94040,#993556);" onclick="setAvatarColor(this,'linear-gradient(135deg,#c94040,#993556)','#fff')"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,#c89030,#994020);" onclick="setAvatarColor(this,'linear-gradient(135deg,#c89030,#994020)','#000')"></div>
+      </div>
+    </div>
+    <div><div class="ob-label">Iniziali (max 2)</div>
+      <input class="ob-input" id="inp-initials" type="text" maxlength="2" placeholder="es. MR"
+        oninput="this.value=this.value.toUpperCase().slice(0,2);setAvatarInitials(this.value)">
+    </div>
+    <div style="margin-top:28px;">
+      <button class="btn-cta" onclick="goOb(3)">Continua</button>
+      <button class="btn-ghost" onclick="goOb(1)">← Indietro</button>
+    </div>
+  </div>
+</div>
+
+<!-- OB3: GENERI -->
+<div class="ob-screen" id="ob3">
+  <div style="padding:48px 20px 16px;flex-shrink:0;">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:20px;">
+      <div class="sdot2 done"></div><div class="sdot2 done"></div><div class="sdot2 active"></div><div class="sdot2"></div>
+    </div>
+    <div class="ob-title">Che generi<br>ti piacciono?</div>
+    <div class="ob-sub" style="margin-top:6px;">Seleziona i generi che ami — ci aiutano a capire il tuo gusto cinematografico di base.</div>
+  </div>
+  <div class="ob-scroll" style="padding:0 16px 24px;">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px;" id="ob-genres">
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-bolt"></i>Azione</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-masks-theater"></i>Drammatico</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-rocket"></i>Sci-Fi</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-eye"></i>Thriller</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-mood-smile"></i>Commedia</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-ghost"></i>Horror</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-heart"></i>Romantico</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-award"></i>Biografico</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-sparkles"></i>Animazione</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-compass"></i>Avventura</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-music"></i>Musical</div>
+      <div class="genre-pill2" onclick="this.classList.toggle('selected')"><i class="ti ti-flower"></i>Documentario</div>
+    </div>
+    <button class="btn-cta" onclick="goOb(4)">Continua</button>
+    <button class="btn-ghost" onclick="goOb(2)">← Indietro</button>
+  </div>
+</div>
+
+<!-- OB4: SELEZIONE FILM -->
+<div class="ob-screen" id="ob4">
+  <div style="padding:48px 20px 14px;flex-shrink:0;">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:20px;">
+      <div class="sdot2 done"></div><div class="sdot2 done"></div><div class="sdot2 done"></div><div class="sdot2 active"></div>
+    </div>
+    <div class="ob-title">Film che hai<br>già visto</div>
+    <div class="ob-sub" style="margin-top:6px;">Seleziona almeno 5 film — più ne scegli, più precisi saranno i tuoi consigli personalizzati.</div>
+  </div>
+  <div class="ob-scroll" style="padding-bottom:110px;">
+    <div style="font-size:12px;color:var(--muted);text-align:center;margin:4px 0 14px;">
+      <span id="sel-count" style="color:var(--accent);font-weight:700;">0</span> selezionati · minimo 5
+    </div>
+    <div id="film-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px;"></div>
+    <div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:375px;padding:12px 16px 24px;background:linear-gradient(to top,var(--bg) 70%,transparent);z-index:30;">
+      <button class="btn-cta" id="btn-ob3" disabled onclick="finishOnboarding()">Inizia a scoprire</button>
+      <button class="btn-ghost" onclick="goOb(3)" style="padding:8px;">← Indietro</button>
+    </div>
+  </div>
+</div>
+
+<!-- OB5: TUTTO PRONTO -->
+<div class="ob-screen" id="ob5">
+  <div style="padding:60px 20px 0;text-align:center;">
+    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;color:#000;">
+      <i class="ti ti-confetti"></i>
+    </div>
+    <div class="ob-title" style="font-size:28px;">Tutto pronto,<br><span id="welcome-name" style="color:var(--accent);">Marco</span>!</div>
+    <div class="ob-sub" style="margin-top:12px;padding:0 10px;">Il tuo profilo è attivo. Abbiamo già calcolato i tuoi primi consigli personalizzati.</div>
+  </div>
+  <div style="padding:32px 20px 0;">
+    <div style="background:var(--bg3);border-radius:14px;padding:16px;border:0.5px solid #2a2a35;display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,#533ab7,#185fa5);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-brain" style="color:#fff;font-size:18px;"></i></div>
+      <div><div style="font-size:13px;font-weight:500;">Raccomandazioni AI attive</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Basate sui tuoi <span id="ob5-count">0</span> film selezionati</div></div>
+      <i class="ti ti-check" style="color:var(--accent);font-size:18px;margin-left:auto;"></i>
+    </div>
+    <div style="background:var(--bg3);border-radius:14px;padding:16px;border:0.5px solid #2a2a35;display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,#e8b44a,#994020);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-mood-smile" style="color:#000;font-size:18px;"></i></div>
+      <div><div style="font-size:13px;font-weight:500;">Mood selector nella Ricerca</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">8 stati d'animo pronti</div></div>
+      <i class="ti ti-check" style="color:var(--accent);font-size:18px;margin-left:auto;"></i>
+    </div>
+    <div style="background:var(--bg3);border-radius:14px;padding:16px;border:0.5px solid #2a2a35;display:flex;gap:12px;align-items:center;">
+      <div style="width:40px;height:40px;background:linear-gradient(135deg,#1d7a35,#0f6e56);border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="ti ti-playlist" style="color:#fff;font-size:18px;"></i></div>
+      <div><div style="font-size:13px;font-weight:500;">CineMix generato</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">Playlist calibrata sui tuoi gusti</div></div>
+      <i class="ti ti-check" style="color:var(--accent);font-size:18px;margin-left:auto;"></i>
+    </div>
+    <div style="margin-top:28px;">
+      <button class="btn-cta" onclick="enterApp()">Entra in CineFlow <i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+</div>
+
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast">
+  <i id="toast-icon" class="ti ti-detective" style="color:var(--accent);"></i>
+  <div class="toast-text" id="toast-text">Hai usato 2 indagini su 3 questo mese</div>
+  <div class="toast-action" onclick="openPaywall()">Passa a Plus</div>
+</div>
+
+<!-- PAYWALL OVERLAY -->
+<div id="paywall-overlay">
+  <div class="paywall-sheet">
+    <div class="paywall-handle"></div>
+    <div class="paywall-icon"><i class="ti ti-detective"></i></div>
+    <div class="paywall-title">Indagini esaurite</div>
+    <div class="paywall-sub">Hai usato le tue 3 indagini Detective gratuite di questo mese.<br>Passa a Plus per indagare senza limiti.</div>
+    <div class="paywall-features">
+      <div class="paywall-feat"><i class="ti ti-detective"></i><span>Modalità Detective illimitata</span></div>
+      <div class="paywall-feat"><i class="ti ti-sparkles"></i><span>Sezione "Per te" con AI</span></div>
+      <div class="paywall-feat"><i class="ti ti-books"></i><span>Libreria illimitata</span></div>
+      <div class="paywall-feat"><i class="ti ti-share"></i><span>Liste pubbliche condivisibili</span></div>
+      <div class="paywall-feat"><i class="ti ti-chart-bar"></i><span>Statistiche avanzate</span></div>
+    </div>
+    <button class="paywall-cta" onclick="paywallSubscribe()">Prova Plus gratis per 7 giorni</button>
+    <div class="paywall-trial">Poi <span>€2,99/mese</span> — cancelli quando vuoi</div>
+    <button class="paywall-dismiss" onclick="closePaywall()">Continua con il piano Free</button>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+
+<!-- HOME -->
+<div class="screen" id="screen-home">
+  <div class="scroll-area">
+    <div class="topbar">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="logo">Cine<span>Flow</span></div>
+        <div id="home-avatar" onclick="switchTab('profile')"
+          style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#e8b44a,#c94040);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;cursor:pointer;">M</div>
+      </div>
+      <div id="home-greeting" style="font-size:13px;color:var(--muted);margin-top:4px;">Buona serata, Marco</div>
+    </div>
+
+    <!-- FEATURED -->
+    <div style="margin:0 20px;border-radius:16px;overflow:hidden;height:180px;position:relative;cursor:pointer;" onclick="showDetail('oppenheimer')">
+      <div class="p1" style="width:100%;height:100%;"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.92) 40%,transparent);"></div>
+      <div style="position:absolute;bottom:16px;left:16px;right:16px;">
+        <div style="font-size:10px;color:var(--accent);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">In evidenza oggi</div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;">Oppenheimer</div>
+        <div style="font-size:11px;color:#aaa;margin-top:4px;">2023 · Christopher Nolan · 3h 0m</div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <div style="background:var(--accent);color:#000;border-radius:16px;padding:5px 14px;font-size:11px;font-weight:600;cursor:pointer;" onclick="event.stopPropagation();showDetail('oppenheimer')">Dettagli</div>
+          <div style="background:rgba(255,255,255,0.12);border-radius:16px;padding:5px 12px;font-size:11px;cursor:pointer;">+ Lista</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PER TE -->
+    <div class="section" style="margin-top:20px;">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Per te</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="perte-subtitle">Basato sui tuoi gusti</div>
+        </div>
+        <div class="see-all">Vedi tutti</div>
+      </div>
+    </div>
+    <div class="h-scroll" id="perte-scroll">
+      <div style="display:flex;align-items:center;padding:0 4px;color:var(--muted);font-size:12px;gap:6px;" class="ai-loading">
+        <i class="ti ti-brain" style="font-size:16px;color:var(--accent);"></i> Calcolo in corso…
+      </div>
+    </div>
+
+    <!-- MOOD -->
+    <div class="section" style="margin-top:20px;">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Come ti senti?</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">Ti consigliamo il film perfetto per il tuo umore</div>
+        </div>
+      </div>
+    </div>
+    <div class="mood-card">
+      <div class="mood-grid">
+        <button class="mood-btn m-felice"     onclick="selectMood('felice',this)"><i class="ti ti-mood-smile"></i><span>Felice</span></button>
+        <button class="mood-btn m-triste"     onclick="selectMood('triste',this)"><i class="ti ti-mood-sad"></i><span>Triste</span></button>
+        <button class="mood-btn m-adrenalina" onclick="selectMood('adrenalina',this)"><i class="ti ti-flame"></i><span>Adrenalina</span></button>
+        <button class="mood-btn m-romantico"  onclick="selectMood('romantico',this)"><i class="ti ti-heart"></i><span>Romantico</span></button>
+        <button class="mood-btn m-pensieroso" onclick="selectMood('pensieroso',this)"><i class="ti ti-brain"></i><span>Pensieroso</span></button>
+        <button class="mood-btn m-spaventato" onclick="selectMood('spaventato',this)"><i class="ti ti-eye"></i><span>Suspense</span></button>
+        <button class="mood-btn m-nostalgico" onclick="selectMood('nostalgico',this)"><i class="ti ti-clock"></i><span>Nostalgico</span></button>
+        <button class="mood-btn m-avventura"  onclick="selectMood('avventura',this)"><i class="ti ti-compass"></i><span>Avventura</span></button>
+      </div>
+    </div>
+    <div class="mood-result" id="mood-result">
+      <div class="result-header" id="mood-result-label"></div>
+      <div class="result-films" id="mood-films"></div>
+    </div>
+
+    <!-- CINEMIX -->
+    <div class="section" style="margin-top:20px;">
+      <div class="section-header"><div class="section-title">CineMix</div><div class="see-all">Vedi tutti</div></div>
+    </div>
+    <div class="h-scroll">
+      <div class="playlist-card">
+        <div class="playlist-cover"><div class="playlist-cover-cell p1"></div><div class="playlist-cover-cell p3"></div><div class="playlist-cover-cell p4"></div><div class="playlist-cover-cell p5"></div></div>
+        <div class="playlist-label">I tuoi preferiti</div><div class="playlist-sub">Action · Thriller</div>
+      </div>
+      <div class="playlist-card">
+        <div class="playlist-cover"><div class="playlist-cover-cell p2"></div><div class="playlist-cover-cell p6"></div><div class="playlist-cover-cell p1"></div><div class="playlist-cover-cell p4"></div></div>
+        <div class="playlist-label">Top 50 globali</div><div class="playlist-sub">I più visti ora</div>
+      </div>
+      <div class="playlist-card">
+        <div class="playlist-cover"><div class="playlist-cover-cell p5"></div><div class="playlist-cover-cell p2"></div><div class="playlist-cover-cell p3"></div><div class="playlist-cover-cell p6"></div></div>
+        <div class="playlist-label">Oscar &amp; Festival</div><div class="playlist-sub">Capolavori d'autore</div>
+      </div>
+      <div class="playlist-card">
+        <div class="playlist-cover"><div class="playlist-cover-cell p3"></div><div class="playlist-cover-cell p5"></div><div class="playlist-cover-cell p6"></div><div class="playlist-cover-cell p1"></div></div>
+        <div class="playlist-label">Sci-Fi essenziali</div><div class="playlist-sub">Fantascienza</div>
+      </div>
+    </div>
+
+    <!-- ULTIMI ARRIVI -->
+    <div class="section" style="margin-top:20px;">
+      <div class="section-header"><div class="section-title">Ultimi arrivi</div><div class="see-all">Vedi tutti</div></div>
+    </div>
+    <div class="h-scroll">
+      <div class="film-card" onclick="showDetail('buencamino')">
+        <div class="film-poster p11"><div class="film-badge" style="color:#fff;background:var(--accent2);">2025</div><div class="sdots"><div class="sdot" style="background:#e50914;">N</div></div></div>
+        <div class="film-title">Buen Camino</div><div class="film-year">2025 · Commedia</div>
+      </div>
+      <div class="film-card" onclick="showDetail('liloStitch')">
+        <div class="film-poster p9"><div class="film-badge" style="color:#fff;background:var(--accent2);">2025</div><div class="sdots"><div class="sdot" style="background:#0063e5;">D</div></div></div>
+        <div class="film-title">Lilo & Stitch</div><div class="film-year">2025 · Avventura</div>
+      </div>
+      <div class="film-card" onclick="showDetail('avatarace')">
+        <div class="film-poster p9"><div class="film-badge" style="color:#fff;background:var(--accent2);">2025</div><div class="sdots"><div class="sdot" style="background:#0063e5;">D</div></div></div>
+        <div class="film-title">Avatar: Fuoco e Cenere</div><div class="film-year">2025 · Sci-Fi</div>
+      </div>
+      <div class="film-card" onclick="showDetail('nosferatu')">
+        <div class="film-poster p1"><div class="film-badge" style="color:#fff;background:var(--accent2);">2025</div><div class="sdots"><div class="sdot" style="background:#f5a623;color:#000;">A</div></div></div>
+        <div class="film-title">Nosferatu</div><div class="film-year">2025 · Horror</div>
+      </div>
+      <div class="film-card" onclick="showDetail('follemente')">
+        <div class="film-poster p10"><div class="film-badge" style="color:#fff;background:var(--accent2);">2025</div><div class="sdots"><div class="sdot" style="background:#f5a623;color:#000;">A</div></div></div>
+        <div class="film-title">FolleMente</div><div class="film-year">2025 · Commedia</div>
+      </div>
+    </div>
+
+    <!-- PIU VOTATI -->
+    <div class="section" style="margin-top:20px;">
+      <div class="section-header"><div class="section-title">Più votati</div><div class="see-all">Vedi tutti</div></div>
+    </div>
+    <div class="h-scroll">
+      <div class="film-card" onclick="showDetail('padrino')">
+        <div class="film-poster p6"><div class="film-badge">9.2</div><div class="sdots"><div class="sdot" style="background:#f5a623;color:#000;">A</div></div></div>
+        <div class="film-title">Il Padrino</div><div class="film-year">1972 · Drammatico</div>
+      </div>
+      <div class="film-card" onclick="showDetail('oppenheimer')">
+        <div class="film-poster p1"><div class="film-badge">9.0</div><div class="sdots"><div class="sdot" style="background:#e50914;">N</div></div></div>
+        <div class="film-title">Oppenheimer</div><div class="film-year">2023 · Biografico</div>
+      </div>
+      <div class="film-card" onclick="showDetail('interstellar')">
+        <div class="film-poster p4"><div class="film-badge">8.8</div><div class="sdots"><div class="sdot" style="background:#0063e5;">D</div></div></div>
+        <div class="film-title">Interstellar</div><div class="film-year">2014 · Sci-Fi</div>
+      </div>
+      <div class="film-card" onclick="showDetail('povereCreature')">
+        <div class="film-poster p8"><div class="film-badge">8.0</div><div class="sdots"><div class="sdot" style="background:#0063e5;">D</div></div></div>
+        <div class="film-title">Povere Creature!</div><div class="film-year">2023 · Drammatico</div>
+      </div>
+      <div class="film-card" onclick="showDetail('dune')">
+        <div class="film-poster p5"><div class="film-badge">8.6</div><div class="sdots"><div class="sdot" style="background:#0063e5;">D</div></div></div>
+        <div class="film-title">Dune: Parte Due</div><div class="film-year">2024 · Sci-Fi</div>
+      </div>
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('home')"><i class="ti ti-home"></i><span>Home</span></button>
+    <button class="nav-btn" onclick="switchTab('search')"><i class="ti ti-search"></i><span>Cerca</span></button>
+    <button class="nav-btn" onclick="switchTab('library')"><i class="ti ti-books"></i><span>Libreria</span></button>
+    <button class="nav-btn" onclick="switchTab('profile')"><i class="ti ti-user"></i><span>Profilo</span></button>
+  </nav>
+</div>
+
+<!-- CERCA -->
+<div class="screen" id="screen-search">
+  <div class="scroll-area">
+    <div class="topbar">
+      <div style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:14px;">Cerca</div>
+
+      <!-- SEARCH BAR -->
+      <div class="search-bar" style="margin:0 0 0 0;">
+        <i class="ti ti-search" style="color:var(--muted);font-size:18px;"></i>
+        <input type="text" id="normal-search-input" placeholder="Film, registi, attori..." style="background:none;border:none;outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;flex:1;"/>
+      </div>
+
+      <!-- PANNELLO MODALITÀ DETECTIVE -->
+      <div id="detective-panel" style="display:none;margin-top:14px;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0 2px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:detectivePulse 1.4s ease infinite;">
+            <i class="ti ti-detective" style="font-size:18px;color:#000;"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:700;color:var(--accent);">Modalità Detective</div>
+            <div style="font-size:11px;color:#a08040;">Il film che non ricordi? Lo trovo io.</div>
+          </div>
+          <button onclick="toggleDetective()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px;">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+
+        <!-- INPUT FORM -->
+        <div id="detective-form" style="background:linear-gradient(135deg,#1c1508,#2a1e06);border:0.5px solid rgba(232,180,74,0.35);border-radius:16px;padding:16px;position:relative;overflow:hidden;">
+          <div style="position:absolute;right:-8px;bottom:-14px;font-size:90px;opacity:0.06;pointer-events:none;">🕵</div>
+
+          <!-- Esempi cliccabili -->
+          <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;margin-bottom:10px;border-bottom:0.5px solid rgba(232,180,74,0.12);">
+            <div class="detective-example" onclick="fillDetExample(this)">👨‍🔬 scienziato costruisce bomba</div>
+            <div class="detective-example" onclick="fillDetExample(this)">🚀 astronauti bloccati nello spazio</div>
+            <div class="detective-example" onclick="fillDetExample(this)">👧 bambina adotta alieno travestito da cane</div>
+            <div class="detective-example" onclick="fillDetExample(this)">🎾 triangolo amoroso tennisti</div>
+            <div class="detective-example" onclick="fillDetExample(this)">🤖 simulazione informatica controlla il mondo</div>
+          </div>
+
+          <!-- Descrizione -->
+          <div class="ob-label" style="margin-bottom:6px;color:#a08040;">Descrivi il film che cerchi</div>
+          <textarea id="detective-input"
+            placeholder="Racconta quello che ricordi — trama, personaggi, ambientazione, finale, qualsiasi cosa…"
+            style="width:100%;background:rgba(0,0,0,0.35);border:0.5px solid rgba(232,180,74,0.2);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;resize:none;height:82px;line-height:1.55;transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='rgba(232,180,74,0.7)'"
+            onblur="this.style.borderColor='rgba(232,180,74,0.2)'"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();runDetective();}"></textarea>
+
+          <!-- Citazione -->
+          <div style="margin-top:10px;">
+            <div style="display:flex;align-items:center;gap:5px;margin-bottom:6px;">
+              <i class="ti ti-quote" style="color:var(--accent);font-size:12px;"></i>
+              <span style="font-size:12px;color:#a08040;font-weight:500;">Ricordi una frase o battuta?</span>
+              <span style="font-size:10px;color:var(--muted);">(opzionale ma molto utile)</span>
+            </div>
+            <input id="detective-quote-input" type="text"
+              placeholder='Es: "Ti faro una offerta che non potrai rifiutare"'
+              style="width:100%;background:rgba(0,0,0,0.35);border:0.5px solid rgba(232,180,74,0.15);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;transition:border-color 0.2s;font-style:italic;"
+              onfocus="this.style.borderColor='rgba(232,180,74,0.6)';this.style.fontStyle='normal'"
+              onblur="this.style.borderColor='rgba(232,180,74,0.15)';this.style.fontStyle=this.value?'normal':'italic'"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();runDetective();}">
+          </div>
+
+          <button onclick="runDetective()"
+            style="width:100%;margin-top:14px;padding:13px;background:var(--accent);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(232,180,74,0.3);">
+            <i class="ti ti-detective" style="font-size:16px;"></i> Trova il film
+          </button>
+        </div>
+
+        <!-- THINKING -->
+        <div id="detective-status" style="display:none;padding:14px 0 0;">
+          <div id="detective-thinking" style="display:none;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg3);border-radius:12px;border:0.5px solid #2a2a35;">
+              <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:detectivePulse 1.4s ease infinite;">
+                <i class="ti ti-detective" style="font-size:18px;color:#000;"></i>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:13px;font-weight:500;" id="detective-step-text">Analizzo gli indizi sul catalogo…</div>
+                <div style="height:3px;background:var(--bg4);border-radius:2px;margin-top:8px;overflow:hidden;">
+                  <div style="height:100%;background:var(--accent);border-radius:2px;animation:aiProgress 1.8s ease infinite;"></div>
+                </div>
+              </div>
+            </div>
+            <div id="detective-clues" style="display:flex;gap:6px;flex-wrap:wrap;padding:0 2px;"></div>
+          </div>
+
+          <!-- Verdetto -->
+          <div id="detective-verdict" style="display:none;">
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:linear-gradient(135deg,rgba(232,180,74,0.08),transparent);border:0.5px solid rgba(232,180,74,0.2);border-radius:10px;margin-bottom:12px;">
+              <i class="ti ti-gavel" style="color:var(--accent);font-size:16px;flex-shrink:0;"></i>
+              <div>
+                <div style="font-size:11px;color:var(--muted);margin-bottom:2px;">Il Detective ha dedotto:</div>
+                <div style="font-size:12px;color:var(--text);line-height:1.5;" id="detective-verdict-text"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RISULTATI -->
+        <div id="detective-results" style="display:none;padding-top:4px;">
+          <div style="font-size:12px;color:var(--muted);font-weight:500;padding:8px 0 10px;display:flex;align-items:center;gap:6px;">
+            <i class="ti ti-file-search" style="color:var(--accent);font-size:14px;"></i>
+            <span id="detective-results-label">Film identificati</span>
+          </div>
+          <div id="detective-results-list"></div>
+
+          <!-- FEEDBACK -->
+          <div id="detective-feedback" style="margin-top:16px;background:var(--bg3);border-radius:14px;padding:14px;border:0.5px solid #2a2a35;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Ho trovato il film che cercavi?</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Il tuo feedback aiuta il detective a migliorare.</div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="detectiveFeedbackYes()"
+                style="flex:1;padding:10px;background:linear-gradient(135deg,#1a2a10,#1d7a35);border:0.5px solid #2a5020;border-radius:10px;color:#7ec84a;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <i class="ti ti-thumb-up" style="font-size:15px;"></i> Si, trovato!
+              </button>
+              <button onclick="detectiveFeedbackNo()"
+                style="flex:1;padding:10px;background:linear-gradient(135deg,#2a0a0a,#5a1010);border:0.5px solid #401010;border-radius:10px;color:#e05555;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <i class="ti ti-thumb-down" style="font-size:15px;"></i> Non ancora
+              </button>
+            </div>
+          </div>
+
+          <!-- RAFFINAMENTO -->
+          <div id="detective-refine" style="display:none;margin-top:12px;background:linear-gradient(135deg,#1a1408,#2a1e06);border:0.5px solid rgba(232,180,74,0.25);border-radius:14px;padding:14px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <i class="ti ti-refresh" style="color:var(--accent);font-size:15px;"></i>
+              <span style="font-size:13px;font-weight:600;color:var(--accent);">Aggiungi un dettaglio</span>
+            </div>
+            <div style="font-size:12px;color:#a08040;margin-bottom:10px;">Dimmi qualcosa di piu — una scena specifica, un attore, il paese, l anno approssimativo…</div>
+            <textarea id="detective-refine-input"
+              placeholder='Es: "c era anche una scena in un deserto" oppure "film americano anni 90"'
+              style="width:100%;background:rgba(0,0,0,0.3);border:0.5px solid rgba(232,180,74,0.2);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none;resize:none;height:60px;line-height:1.5;transition:border-color 0.2s;"
+              onfocus="this.style.borderColor='rgba(232,180,74,0.6)'"
+              onblur="this.style.borderColor='rgba(232,180,74,0.2)'"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();runDetectiveRefine();}"></textarea>
+            <input id="detective-refine-quote" type="text"
+              placeholder="Aggiungi una citazione se la ricordi…"
+              style="width:100%;background:rgba(0,0,0,0.3);border:0.5px solid rgba(232,180,74,0.15);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:8px 12px;outline:none;margin-top:8px;transition:border-color 0.2s;font-style:italic;"
+              onfocus="this.style.borderColor='rgba(232,180,74,0.5)';this.style.fontStyle='normal'"
+              onblur="this.style.borderColor='rgba(232,180,74,0.15)';this.style.fontStyle=this.value?'normal':'italic'"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();runDetectiveRefine();}">
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button onclick="resetDetective()"
+                style="flex:0 0 auto;padding:8px 14px;background:none;border:0.5px solid #2a2a35;border-radius:20px;color:var(--muted);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+                <i class="ti ti-refresh" style="font-size:12px;"></i> Ricomincia
+              </button>
+              <button onclick="runDetectiveRefine()"
+                style="flex:1;padding:8px 16px;background:var(--accent);color:#000;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:5px;">
+                <i class="ti ti-arrow-right" style="font-size:13px;"></i> Cerca di nuovo
+              </button>
+            </div>
+          </div>
+
+          <!-- SUCCESSO -->
+          <div id="detective-success" style="display:none;margin-top:12px;text-align:center;padding:16px;background:linear-gradient(135deg,#0a1a0a,#0f3010);border:0.5px solid #1a4020;border-radius:14px;">
+            <div style="font-size:28px;margin-bottom:8px;">🎬</div>
+            <div style="font-size:14px;font-weight:700;color:#7ec84a;margin-bottom:4px;">Caso risolto!</div>
+            <div style="font-size:12px;color:#508040;line-height:1.5;">Il tuo feedback e stato registrato.<br>Il detective migliorera nelle prossime indagini.</div>
+            <button onclick="resetDetective()" style="margin-top:12px;padding:8px 20px;background:none;border:0.5px solid #2a5020;border-radius:20px;color:#7ec84a;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">
+              <i class="ti ti-detective" style="font-size:12px;"></i> Nuova indagine
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- MOOD SELECTOR nella ricerca -->
+    <!-- BANNER MODALITÀ DETECTIVE -->
+    <div class="detective-banner" onclick="toggleDetective()" id="detective-banner-el">
+      <div class="detective-banner-shimmer"></div>
+      <div class="detective-banner-scanline"></div>
+      <div class="detective-banner-bg-icon">🕵</div>
+      <div class="detective-badge">
+        <i class="ti ti-sparkles" style="font-size:11px;"></i>
+        Powered by AI
+      </div>
+      <div class="detective-banner-title">
+        <em>Modalità Detective</em>
+      </div>
+      <div class="detective-banner-tagline">Il film che non ricordi? Lo trovo io.</div>
+      <div class="detective-banner-sub">
+        Dimmi tutto quello che ricordi — una scena, una frase, un attore.<br>Ti faccio domande finché il film non emerge.
+      </div>
+      <div class="detective-banner-row">
+        <div class="detective-banner-hints">
+          <div class="detective-hint-pill"><i class="ti ti-movie" style="font-size:11px;"></i>Trama</div>
+          <div class="detective-hint-pill"><i class="ti ti-quote" style="font-size:11px;"></i>Citazione</div>
+          <div class="detective-hint-pill"><i class="ti ti-user" style="font-size:11px;"></i>Attore</div>
+          <div class="detective-hint-pill"><i class="ti ti-calendar" style="font-size:11px;"></i>Epoca</div>
+        </div>
+        <button class="detective-banner-cta" onclick="event.stopPropagation();toggleDetective()">
+          <i class="ti ti-detective"></i> Mettimi alla prova
+        </button>
+      </div>
+      <div class="detective-counter-row">
+        <div class="dc-pip avail" id="banner-pip1"></div>
+        <div class="dc-pip avail" id="banner-pip2"></div>
+        <div class="dc-pip avail" id="banner-pip3"></div>
+        <span class="detective-counter-label" id="banner-counter-label">3 indagini gratuite questo mese</span>
+        <span class="detective-counter-plus" onclick="event.stopPropagation();openPaywall()">Plus →</span>
+      </div>
+    </div>
+
+    <div id="search-default-content">
+      <div style="padding:0 20px 14px;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Non sai cosa vedere?</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Scegli come ti senti adesso — ti consigliamo il film giusto per il tuo momento.</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;" id="search-mood-grid">
+          <button class="search-mood-btn m-felice"     onclick="selectSearchMood('felice',this)"><i class="ti ti-mood-smile"></i><span>Felice</span></button>
+          <button class="search-mood-btn m-triste"     onclick="selectSearchMood('triste',this)"><i class="ti ti-mood-sad"></i><span>Triste</span></button>
+          <button class="search-mood-btn m-adrenalina" onclick="selectSearchMood('adrenalina',this)"><i class="ti ti-flame"></i><span>Adrenalina</span></button>
+          <button class="search-mood-btn m-romantico"  onclick="selectSearchMood('romantico',this)"><i class="ti ti-heart"></i><span>Romantico</span></button>
+          <button class="search-mood-btn m-pensieroso" onclick="selectSearchMood('pensieroso',this)"><i class="ti ti-brain"></i><span>Pensieroso</span></button>
+          <button class="search-mood-btn m-spaventato" onclick="selectSearchMood('spaventato',this)"><i class="ti ti-eye"></i><span>Suspense</span></button>
+          <button class="search-mood-btn m-nostalgico" onclick="selectSearchMood('nostalgico',this)"><i class="ti ti-clock"></i><span>Nostalgico</span></button>
+          <button class="search-mood-btn m-avventura"  onclick="selectSearchMood('avventura',this)"><i class="ti ti-compass"></i><span>Avventura</span></button>
+        </div>
+      </div>
+
+      <!-- RISULTATI MOOD -->
+      <div id="search-mood-result" style="display:none;margin:0 20px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div style="font-size:13px;font-weight:500;" id="search-mood-title"></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;" id="search-mood-sub"></div>
+          </div>
+          <button onclick="clearSearchMood()" style="background:none;border:0.5px solid #2a2a35;border-radius:16px;padding:4px 12px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;">
+            <i class="ti ti-x" style="font-size:10px;"></i> Reset
+          </button>
+        </div>
+        <div id="search-mood-films" style="display:flex;flex-direction:column;gap:0;"></div>
+      </div>
+
+      <!-- GENERI -->
+      <div id="search-genres-section">
+        <div style="padding:0 20px 12px;font-size:12px;color:var(--muted);font-weight:500;">Sfoglia per genere</div>
+        <div class="genre-grid">
+          <div class="genre-tile g-action">Azione<i class="ti ti-bolt"></i></div>
+          <div class="genre-tile g-drama">Drammatico<i class="ti ti-masks-theater"></i></div>
+          <div class="genre-tile g-scifi">Sci-Fi<i class="ti ti-rocket"></i></div>
+          <div class="genre-tile g-thriller">Thriller<i class="ti ti-eye"></i></div>
+          <div class="genre-tile g-comedy">Commedia<i class="ti ti-mood-smile"></i></div>
+          <div class="genre-tile g-horror">Horror<i class="ti ti-ghost"></i></div>
+        </div>
+        <div style="padding:16px 20px 4px;font-size:12px;color:var(--muted);font-weight:500;">Tendenze di oggi</div>
+        <div class="list-item" onclick="showDetail('oppenheimer')"><div style="width:28px;font-size:18px;font-weight:700;color:var(--accent);text-align:center;">1</div><div class="list-thumb p1"></div><div class="list-info"><div class="list-title2">Oppenheimer</div><div class="list-meta2">9.2 · Biografico · 2023</div></div></div>
+        <div class="list-item" onclick="showDetail('dune')"><div style="width:28px;font-size:18px;font-weight:700;color:var(--accent);text-align:center;">2</div><div class="list-thumb p5"></div><div class="list-info"><div class="list-title2">Dune: Parte Due</div><div class="list-meta2">8.6 · Sci-Fi · 2024</div></div></div>
+        <div class="list-item" onclick="showDetail('alien')"><div style="width:28px;font-size:18px;font-weight:700;color:var(--muted);text-align:center;">3</div><div class="list-thumb p3"></div><div class="list-info"><div class="list-title2">Alien: Romulus</div><div class="list-meta2">7.4 · Horror · 2024</div></div></div>
+        <div class="list-item" onclick="showDetail('challengers')"><div style="width:28px;font-size:18px;font-weight:700;color:var(--muted);text-align:center;">4</div><div class="list-thumb p8"></div><div class="list-info"><div class="list-title2">Challengers</div><div class="list-meta2">7.5 · Romantico · 2024</div></div></div>
+        <div class="list-item" onclick="showDetail('padrino')"><div style="width:28px;font-size:18px;font-weight:700;color:var(--muted);text-align:center;">5</div><div class="list-thumb p6"></div><div class="list-info"><div class="list-title2">Il Padrino</div><div class="list-meta2">9.2 · Drammatico · 1972</div></div></div>
+      </div>
+    </div>
+
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn" onclick="switchTab('home')"><i class="ti ti-home"></i><span>Home</span></button>
+    <button class="nav-btn active" onclick="switchTab('search')"><i class="ti ti-search"></i><span>Cerca</span></button>
+    <button class="nav-btn" onclick="switchTab('library')"><i class="ti ti-books"></i><span>Libreria</span></button>
+    <button class="nav-btn" onclick="switchTab('profile')"><i class="ti ti-user"></i><span>Profilo</span></button>
+  </nav>
+</div>
+
+<!-- LIBRERIA -->
+<div class="screen" id="screen-library">
+  <div class="scroll-area">
+    <div class="topbar">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;">La mia libreria</div>
+        <button style="background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;"><i class="ti ti-plus"></i></button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:0 20px 16px;overflow-x:auto;">
+      <div style="flex-shrink:0;background:var(--accent);color:#000;border-radius:16px;padding:5px 14px;font-size:12px;font-weight:600;">Tutto</div>
+      <div style="flex-shrink:0;background:var(--bg3);border-radius:16px;padding:5px 14px;font-size:12px;color:var(--muted);">Watchlist</div>
+      <div style="flex-shrink:0;background:var(--bg3);border-radius:16px;padding:5px 14px;font-size:12px;color:var(--muted);">Visti</div>
+      <div style="flex-shrink:0;background:var(--bg3);border-radius:16px;padding:5px 14px;font-size:12px;color:var(--muted);">Preferiti</div>
+      <div style="flex-shrink:0;background:var(--bg3);border-radius:16px;padding:5px 14px;font-size:12px;color:var(--muted);">Condivisi</div>
+    </div>
+    <div class="list-item" onclick="showDetail('oppenheimer')"><div class="list-thumb p1"></div><div class="list-info"><div class="list-title2">Oppenheimer</div><div class="list-meta2">Visto il 12 Gen · 3h 0m</div></div><div class="list-rating2">★ 9.2</div></div>
+    <div class="list-item" onclick="showDetail('dune')"><div class="list-thumb p5"></div><div class="list-info"><div class="list-title2">Dune: Parte Due</div><div class="list-meta2">Watchlist</div></div><i class="ti ti-bookmark" style="color:var(--accent);font-size:16px;"></i></div>
+    <div class="list-item" onclick="showDetail('interstellar')"><div class="list-thumb p4"></div><div class="list-info"><div class="list-title2">Interstellar</div><div class="list-meta2">Visto il 3 Dic · 2h 49m</div></div><div class="list-rating2">★ 8.8</div></div>
+    <div class="list-item" onclick="showDetail('padrino')"><div class="list-thumb p6"></div><div class="list-info"><div class="list-title2">Il Padrino</div><div class="list-meta2">Preferito</div></div><i class="ti ti-heart" style="color:var(--accent2);font-size:16px;"></i></div>
+    <div class="list-item" onclick="showDetail('alien')"><div class="list-thumb p3"></div><div class="list-info"><div class="list-title2">Alien: Romulus</div><div class="list-meta2">Visto il 20 Gen · 1h 59m</div></div><div class="list-rating2">★ 7.4</div></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn" onclick="switchTab('home')"><i class="ti ti-home"></i><span>Home</span></button>
+    <button class="nav-btn" onclick="switchTab('search')"><i class="ti ti-search"></i><span>Cerca</span></button>
+    <button class="nav-btn active" onclick="switchTab('library')"><i class="ti ti-books"></i><span>Libreria</span></button>
+    <button class="nav-btn" onclick="switchTab('profile')"><i class="ti ti-user"></i><span>Profilo</span></button>
+  </nav>
+</div>
+
+<!-- PROFILO -->
+<div class="screen" id="screen-profile">
+  <div class="scroll-area">
+    <div style="padding:48px 20px 0;display:flex;justify-content:flex-end;">
+      <button onclick="switchTab('settings')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;"><i class="ti ti-settings"></i></button>
+    </div>
+    <div class="profile-header" style="padding-top:8px;">
+      <div class="profile-avatar-dynamic" id="profile-avatar-el" style="background:linear-gradient(135deg,#e8b44a,#c94040);color:#000;">M</div>
+      <div class="profile-name" id="profile-name-el">Marco Rossi</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="profile-sub-el">@marcorossi · Roma</div>
+      <div class="profile-stats">
+        <div class="pstat"><div class="pstat-num" id="stat-visti">142</div><div class="pstat-lbl">Film visti</div></div>
+        <div class="pstat"><div class="pstat-num">23</div><div class="pstat-lbl">Seguaci</div></div>
+        <div class="pstat"><div class="pstat-num">8</div><div class="pstat-lbl">Liste</div></div>
+      </div>
+      <button class="share-btn"><i class="ti ti-share"></i> Condividi profilo</button>
+    </div>
+    <div style="padding:0 20px;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:10px;">Le mie liste pubbliche</div>
+    <div class="list-item"><div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#533ab7,#c94040);flex-shrink:0;"></div><div class="list-info"><div class="list-title2">Capolavori del cinema</div><div class="list-meta2">42 film · Condivisa</div></div><i class="ti ti-dots-vertical" style="color:var(--muted);font-size:18px;"></i></div>
+    <div class="list-item"><div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#185fa5,#1d9e75);flex-shrink:0;"></div><div class="list-info"><div class="list-title2">Sci-Fi che cambiano la vita</div><div class="list-meta2">18 film · Condivisa</div></div><i class="ti ti-dots-vertical" style="color:var(--muted);font-size:18px;"></i></div>
+    <div style="padding:16px 20px 4px;font-size:12px;color:var(--muted);font-weight:500;">Generi preferiti</div>
+    <div style="display:flex;gap:8px;padding:8px 20px;flex-wrap:wrap;" id="profile-genres-el">
+      <div style="background:var(--bg3);border-radius:14px;padding:5px 12px;font-size:12px;">Sci-Fi</div>
+      <div style="background:var(--bg3);border-radius:14px;padding:5px 12px;font-size:12px;">Thriller</div>
+      <div style="background:var(--bg3);border-radius:14px;padding:5px 12px;font-size:12px;">Drammatico</div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn" onclick="switchTab('home')"><i class="ti ti-home"></i><span>Home</span></button>
+    <button class="nav-btn" onclick="switchTab('search')"><i class="ti ti-search"></i><span>Cerca</span></button>
+    <button class="nav-btn" onclick="switchTab('library')"><i class="ti ti-books"></i><span>Libreria</span></button>
+    <button class="nav-btn active" onclick="switchTab('profile')"><i class="ti ti-user"></i><span>Profilo</span></button>
+  </nav>
+</div>
+
+<!-- DETTAGLIO FILM -->
+<div class="screen" id="screen-detail">
+  <div class="detail-hero" id="detail-hero-bg">
+    <div class="detail-hero-grad"></div>
+    <button class="back-btn" onclick="goBack()"><i class="ti ti-arrow-left"></i></button>
+  </div>
+  <div class="detail-scroll">
+    <div class="detail-title" id="d-title"></div>
+    <div class="detail-meta-row">
+      <div class="detail-rating" id="d-rating"></div>
+      <div class="detail-tag" id="d-year"></div>
+      <div class="detail-tag" id="d-dur"></div>
+      <div class="detail-tag" id="d-genre"></div>
+    </div>
+    <!-- AFFINITÀ -->
+    <div class="affinity-row" id="d-affinity"></div>
+    <div class="detail-synopsis" id="d-synopsis"></div>
+    <div class="action-row">
+      <button class="btn-outline flex1" id="btn-addlist" onclick="toggleList()"><i class="ti ti-plus"></i> La mia lista</button>
+      <button class="btn-outline" id="btn-heart" style="width:44px;justify-content:center;" onclick="toggleHeart()"><i class="ti ti-heart"></i></button>
+      <button class="btn-outline" style="width:44px;justify-content:center;"><i class="ti ti-share"></i></button>
+    </div>
+    <div id="d-trailer-wrap"></div>
+    <div style="margin-top:20px;"><div class="watch-title">Disponibile su</div><div class="streaming-list" id="d-streaming"></div></div>
+    <div style="margin-top:20px;"><div class="watch-title">Regia</div><div class="cast-row" id="d-directors"></div></div>
+    <div style="margin-top:20px;"><div class="watch-title">Cast principale</div><div class="cast-row" id="d-cast"></div></div>
+    <!-- PERCHÉ POTREBBE PIACERTI -->
+    <div style="margin-top:20px;" id="d-perche-wrap">
+      <div class="watch-title">Perché potrebbe piacerti</div>
+      <div style="background:var(--bg3);border-radius:12px;padding:12px 14px;border:0.5px solid #2a2a35;" id="d-perche"></div>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="watch-title">Film affini</div>
+      <div class="h-scroll" style="padding:0 0 4px;" id="d-similar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FILMOGRAFIA -->
+<div class="screen" id="screen-filmog">
+  <div class="scroll-area">
+    <div class="filmog-header">
+      <button class="back-btn" style="position:static;margin-bottom:14px;background:var(--bg3);" onclick="goBackToDetail()"><i class="ti ti-arrow-left"></i></button>
+      <div class="filmog-person">
+        <div class="filmog-avatar" id="fg-avatar"></div>
+        <div><div class="filmog-name" id="fg-name"></div><div class="filmog-role-badge" id="fg-role"></div></div>
+      </div>
+      <div class="filmog-stats" id="fg-stats"></div>
+    </div>
+    <div class="filter-row" id="fg-filters"></div>
+    <div id="fg-list"></div>
+  </div>
+</div>
+
+
+<!-- IMPOSTAZIONI -->
+<div class="screen slide-up" id="screen-settings">
+  <div class="scroll-area">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="switchTab('profile')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;"><i class="ti ti-arrow-left"></i></button>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;">Impostazioni</div>
+      </div>
+    </div>
+
+    <!-- PROFILO -->
+    <div class="settings-section-title">Il tuo profilo</div>
+    <div style="background:var(--bg2);margin:0 20px;border-radius:14px;border:0.5px solid #2a2a35;overflow:hidden;">
+      <div style="padding:16px 16px 12px;display:flex;align-items:center;gap:12px;">
+        <div id="settings-avatar" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#e8b44a,#c94040);color:#000;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">M</div>
+        <div>
+          <div id="settings-name" style="font-size:15px;font-weight:500;">Marco Rossi</div>
+          <div id="settings-user" style="font-size:12px;color:var(--muted);margin-top:2px;">@marcorossi · Roma</div>
+        </div>
+        <button onclick="showToast('ti-pencil','Modifica profilo disponibile nella versione completa','',false)" style="margin-left:auto;background:none;border:0.5px solid #2a2a35;border-radius:8px;padding:6px 12px;color:var(--accent);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Modifica</button>
+      </div>
+    </div>
+
+    <!-- PLUS -->
+    <div class="settings-section-title">Piano</div>
+    <div style="background:var(--bg2);margin:0 20px;border-radius:14px;border:0.5px solid #2a2a35;overflow:hidden;">
+      <div style="padding:14px 16px;display:flex;align-items:center;gap:10px;">
+        <div class="settings-icon" style="background:rgba(232,180,74,0.12);"><i class="ti ti-crown" style="color:var(--accent);"></i></div>
+        <div style="flex:1;">
+          <div class="settings-label">CineFlow Free</div>
+          <div class="settings-sub">Passa a Plus per sbloccare tutto</div>
+        </div>
+        <button onclick="openPaywall()" style="background:var(--accent);color:#000;border:none;border-radius:16px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">Upgrade</button>
+      </div>
+      <div style="padding:10px 16px 14px;border-top:0.5px solid #2a2a35;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Indagini Detective questo mese</div>
+        <div class="detective-counter">
+          <div class="dc-dot used" id="dc1"></div>
+          <div class="dc-dot used" id="dc2"></div>
+          <div class="dc-dot used" id="dc3"></div>
+          <span style="font-size:12px;color:var(--muted);margin-left:4px;" id="dc-label">0 rimaste</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREFERENZE -->
+    <div class="settings-section-title">Preferenze</div>
+    <div style="background:var(--bg2);margin:0 20px;border-radius:14px;border:0.5px solid #2a2a35;overflow:hidden;">
+      <div class="settings-row">
+        <div class="settings-icon" style="background:rgba(83,74,183,0.12);"><i class="ti ti-bell" style="color:#7F77DD;"></i></div>
+        <div style="flex:1;"><div class="settings-label">Notifiche</div><div class="settings-sub">Nuovi film e consigli</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked><div class="toggle-slider"></div></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-icon" style="background:rgba(29,158,117,0.12);"><i class="ti ti-moon" style="color:#1D9E75;"></i></div>
+        <div style="flex:1;"><div class="settings-label">Tema scuro</div><div class="settings-sub">Sempre attivo</div></div>
+        <label class="toggle-wrap"><input type="checkbox" checked disabled><div class="toggle-slider"></div></label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-icon" style="background:rgba(232,180,74,0.12);"><i class="ti ti-language" style="color:var(--accent);"></i></div>
+        <div style="flex:1;"><div class="settings-label">Lingua</div><div class="settings-sub">Italiano</div></div>
+        <i class="ti ti-chevron-right settings-chevron"></i>
+      </div>
+    </div>
+
+    <!-- GENERI PREFERITI -->
+    <div class="settings-section-title">I tuoi gusti</div>
+    <div style="background:var(--bg2);margin:0 20px;border-radius:14px;border:0.5px solid #2a2a35;overflow:hidden;">
+      <div class="settings-row" onclick="showToast('ti-category','Modifica generi disponibile nella versione completa','',false)">
+        <div class="settings-icon" style="background:rgba(201,64,64,0.12);"><i class="ti ti-category" style="color:var(--accent2);"></i></div>
+        <div style="flex:1;"><div class="settings-label">Generi preferiti</div><div class="settings-sub" id="settings-genres-sub">Sci-Fi · Thriller · Drammatico</div></div>
+        <i class="ti ti-chevron-right settings-chevron"></i>
+      </div>
+      <div class="settings-row" onclick="showToast('ti-refresh','Riesegui l'onboarding per ricalibrare i gusti','',false)">
+        <div class="settings-icon" style="background:rgba(24,95,165,0.12);"><i class="ti ti-refresh" style="color:#185fa5;"></i></div>
+        <div style="flex:1;"><div class="settings-label">Ricalibra i consigli</div><div class="settings-sub">Ripeti la selezione film iniziale</div></div>
+        <i class="ti ti-chevron-right settings-chevron"></i>
+      </div>
+    </div>
+
+    <!-- INFO APP -->
+    <div class="settings-section-title">Info</div>
+    <div style="background:var(--bg2);margin:0 20px;border-radius:14px;border:0.5px solid #2a2a35;overflow:hidden;">
+      <div class="settings-row">
+        <div class="settings-icon" style="background:var(--bg3);"><i class="ti ti-info-circle" style="color:var(--muted);"></i></div>
+        <div style="flex:1;"><div class="settings-label">Versione</div><div class="settings-sub">CineFlow v5.0 — Beta</div></div>
+      </div>
+      <div class="settings-row" onclick="showToast('ti-file-text','Termini di servizio — versione completa in arrivo','',false)">
+        <div class="settings-icon" style="background:var(--bg3);"><i class="ti ti-file-text" style="color:var(--muted);"></i></div>
+        <div style="flex:1;"><div class="settings-label">Termini di servizio</div></div>
+        <i class="ti ti-chevron-right settings-chevron"></i>
+      </div>
+      <div class="settings-row" onclick="showToast('ti-shield','Privacy policy — versione completa in arrivo','',false)">
+        <div class="settings-icon" style="background:var(--bg3);"><i class="ti ti-shield" style="color:var(--muted);"></i></div>
+        <div style="flex:1;"><div class="settings-label">Privacy policy</div></div>
+        <i class="ti ti-chevron-right settings-chevron"></i>
+      </div>
+    </div>
+
+    <!-- LOGOUT -->
+    <div style="padding:20px;">
+      <button onclick="showToast('ti-logout','Logout disponibile nella versione completa','',false)" style="width:100%;padding:12px;background:none;border:0.5px solid var(--accent2);border-radius:12px;color:var(--accent2);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">
+        <i class="ti ti-logout" style="font-size:14px;"></i> Esci dall'account
+      </button>
+    </div>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+</div><!-- #app -->
+
+<script>
+/* ══════════════════════════════════════════
+   DATABASE FILM — con tags per raccomandazione
+   ══════════════════════════════════════════ */
+const FILMS = {
+  /* ── CLASSICI INTERNAZIONALI ── */
+  schindler:{title:"Schindler's List",year:'1993',dur:'3h 15m',genre:'Drammatico',rating:9.0,bg:'p6',
+    tags:['guerra','storia','olocausto','drammatico','spielberg','classico'],directors_list:['spielberg'],
+    trailer:{url:'https://www.youtube.com/watch?v=mxphAlJID9U',dur:'2:32'},
+    synopsis:"La storia vera di Oskar Schindler che salvo oltre mille ebrei durante la Shoah. Capolavoro assoluto di Spielberg.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['spielberg'],cast:['neeson','fiennes','kingsley'],similar:['padrino','oppenheimer','gladiatore2']},
+
+  inception:{title:'Inception',year:'2010',dur:'2h 28m',genre:'Sci-Fi',rating:8.8,bg:'p4',
+    tags:['sogno','fantascienza','thriller','mentale','nolan','azione'],directors_list:['nolan'],
+    trailer:{url:'https://www.youtube.com/watch?v=YoHD9XEInc0',dur:'3:33'},
+    synopsis:"Un ladro di segreti che opera attraverso i sogni riceve il compito impossibile di piantare una idea nella mente di un uomo.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'},{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['nolan'],cast:['dicaprio','gordon','cotillard'],similar:['interstellar','oppenheimer','dune']},
+
+  matrix:{title:'Matrix',year:'1999',dur:'2h 16m',genre:'Sci-Fi',rating:8.7,bg:'p11',
+    tags:['fantascienza','realta','hacker','azione','wachowski','rivoluzione'],directors_list:['wachowski'],
+    trailer:{url:'https://www.youtube.com/watch?v=vKQi3bBA1y8',dur:'2:31'},
+    synopsis:"Un programmatore scopre che la realta e una simulazione creata dalle macchine e si unisce alla resistenza umana.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'},{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['wachowski'],cast:['reeves','fishburne','moss'],similar:['inception','dune','interstellar']},
+
+  fightclub:{title:'Fight Club',year:'1999',dur:'2h 19m',genre:'Thriller',rating:8.8,bg:'p3',
+    tags:['thriller','psicologico','identita','violenza','fincher','rivoluzione'],directors_list:['fincher'],
+    trailer:{url:'https://www.youtube.com/watch?v=qtRKdVHc-cE',dur:'2:17'},
+    synopsis:"Un impiegato insoddisfatto forma un club di combattimento clandestino con uno strano venditore di sapone.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['fincher'],cast:['pitt','norton','bonham-carter'],similar:['joker','parasite','oppenheimer']},
+
+  joker:{title:'Joker',year:'2019',dur:'2h 2m',genre:'Drammatico',rating:8.4,bg:'p10',
+    tags:['drammatico','villain','psicologico','batman','crimine','phoenix'],directors_list:['phillips'],
+    trailer:{url:'https://www.youtube.com/watch?v=zAGVQLHvwOY',dur:'2:28'},
+    synopsis:"Arthur Fleck, un comico fallito e instabile, scivola nella follia e diventa il leggendario criminale Joker.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'},{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['phillips'],cast:['phoenix','de-niro'],similar:['fightclub','parasite','oppenheimer']},
+
+  parasite:{title:'Parasite',year:'2019',dur:'2h 12m',genre:'Thriller',rating:8.5,bg:'p7',
+    tags:['coreano','classismo','thriller','dark comedy','bong','oscar'],directors_list:['bong'],
+    trailer:{url:'https://www.youtube.com/watch?v=5xH0HfJHsaY',dur:'2:02'},
+    synopsis:"Una famiglia povera si infiltra nella vita di una ricca con conseguenze devastanti. Primo film non anglofono a vincere l'Oscar.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['bong'],cast:['kang','choi','park'],similar:['joker','fightclub','povereCreature']},
+
+  lalaland:{title:'La La Land',year:'2016',dur:'2h 8m',genre:'Romantico',rating:8.0,bg:'p8',
+    tags:['musical','romantico','jazz','sogni','chazelle','los angeles'],directors_list:['chazelle'],
+    trailer:{url:'https://www.youtube.com/watch?v=0pdqf4P9MB8',dur:'2:26'},
+    synopsis:"Una aspirante attrice e un jazzista si innamorano nella Los Angeles moderna, inseguendo i loro sogni.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['chazelle'],cast:['gosling','stone'],similar:['challengers','diamanti','follemente']},
+
+  whiplash:{title:'Whiplash',year:'2014',dur:'1h 47m',genre:'Drammatico',rating:8.5,bg:'p6',
+    tags:['musica','jazz','ossessione','perfezionismo','chazelle','batteria'],directors_list:['chazelle'],
+    trailer:{url:'https://www.youtube.com/watch?v=7d_jQycdQGo',dur:'2:25'},
+    synopsis:"Un giovane batterista cerca di diventare il migliore della sua generazione sotto la guida di un maestro brutale.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'},{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['chazelle'],cast:['teller','simmons'],similar:['lalaland','oppenheimer','padrino']},
+
+  forrest:{title:'Forrest Gump',year:'1994',dur:'2h 22m',genre:'Drammatico',rating:8.8,bg:'p2',
+    tags:['drammatico','america','storia','amicizia','romantico','zemeckis'],directors_list:['zemeckis'],
+    trailer:{url:'https://www.youtube.com/watch?v=bLvqoHBptjg',dur:'2:17'},
+    synopsis:"La vita straordinaria di un uomo semplice che attraversa inconsapevolmente i momenti chiave della storia americana.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['zemeckis'],cast:['hanks','wright','sinise'],similar:['schindler','padrino','oppenheimer']},
+
+  amelie:{title:'Il Favoloso Mondo di Amelie',year:'2001',dur:'2h 2m',genre:'Romantico',rating:8.3,bg:'p8',
+    tags:['francese','romantico','whimsy','parigi','jeunet','commedia'],directors_list:['jeunet'],
+    trailer:{url:'https://www.youtube.com/watch?v=OFGbUdv6fjg',dur:'1:35'},
+    synopsis:"Una giovane cameriera parigina decide di cambiare la vita delle persone intorno a lei pur restando in disparte dalla propria.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['jeunet'],cast:['tautou'],similar:['lalaland','challengers','inside']},
+
+  darkknightfilm:{title:'The Dark Knight',year:'2008',dur:'2h 32m',genre:'Azione',rating:9.0,bg:'p4',
+    tags:['batman','joker','supereroi','thriller','nolan','crimine'],directors_list:['nolan'],
+    trailer:{url:'https://www.youtube.com/watch?v=EXeTwQWrcwY',dur:'2:28'},
+    synopsis:"Batman affronta il Joker, un criminale caotico che vuole destabilizzare Gotham City. Ledger e indimenticabile nel ruolo.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['nolan'],cast:['bale','ledger','oldman'],similar:['inception','joker','deadpool']},
+
+  gladiatore:{title:'Il Gladiatore',year:'2000',dur:'2h 35m',genre:'Azione',rating:8.5,bg:'p6',
+    tags:['roma','azione','vendetta','storia','scott','epico'],directors_list:['scott'],
+    trailer:{url:'https://www.youtube.com/watch?v=owK1qxDselE',dur:'2:34'},
+    synopsis:"Un generale romano tradito e ridotto in schiavitu diventa gladiatore per vendicarsi dell imperatore che ha ucciso la sua famiglia.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['scott'],cast:['crowe','phoenix','reed'],similar:['gladiatore2','padrino','oppenheimer']},
+
+  silence:{title:'Il Silenzio degli Innocenti',year:'1991',dur:'1h 58m',genre:'Thriller',rating:8.6,bg:'p3',
+    tags:['thriller','serial killer','fbi','hannibal','psicologico','oscar'],directors_list:['demme'],
+    trailer:{url:'https://www.youtube.com/watch?v=6iB21hsprAQ',dur:'2:00'},
+    synopsis:"Una tirocinante FBI deve chiedere aiuto al brillante ma pericoloso Hannibal Lecter per catturare un altro serial killer.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['demme'],cast:['foster','hopkins'],similar:['fightclub','parasite','nosferatu']},
+
+  hereditary:{title:'Hereditary',year:'2018',dur:'2h 7m',genre:'Horror',rating:7.3,bg:'p3',
+    tags:['horror','famiglia','soprannaturale','psicologico','ari aster','trauma'],directors_list:['aster'],
+    trailer:{url:'https://www.youtube.com/watch?v=V6wWKNij_1M',dur:'2:33'},
+    synopsis:"Dopo la morte della madre, una famiglia e tormentata da un male soprannaturale con conseguenze devastanti.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['aster'],cast:['collette','wolff'],similar:['nosferatu','alien','midsommar']},
+
+  midsommar:{title:'Midsommar',year:'2019',dur:'2h 28m',genre:'Horror',rating:7.1,bg:'p5',
+    tags:['horror','folklore','svezia','folk horror','aster','coppia'],directors_list:['aster'],
+    trailer:{url:'https://www.youtube.com/watch?v=1Vnghdsjmd0',dur:'2:22'},
+    synopsis:"Una coppia in crisi si reca in Svezia per un festival estivo che si rivela essere qualcosa di oscuro e terrificante.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['aster'],cast:['pugh','harper'],similar:['hereditary','nosferatu','alien']},
+
+  barbie:{title:'Barbie',year:'2023',dur:'1h 54m',genre:'Commedia',rating:6.9,bg:'p8',
+    tags:['commedia','barbie','femminismo','pop','gerwig','satira'],directors_list:['gerwig'],
+    trailer:{url:'https://www.youtube.com/watch?v=pBk4NYhWNMM',dur:'2:36'},
+    synopsis:"Barbie vive nella perfetta Barbieland finche una crisi esistenziale la porta a esplorare il mondo reale con Ken.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['gerwig'],cast:['robbie','gosling'],similar:['lalaland','inside','challengers']},
+
+  emiliaperez:{title:'Emilia Perez',year:'2024',dur:'2h 12m',genre:'Drammatico',rating:7.2,bg:'p10',
+    tags:['musical','messico','transgender','crimine','audiard','netflix'],directors_list:['audiard'],
+    trailer:{url:'https://www.youtube.com/watch?v=Gb_6gYHqEqU',dur:'2:20'},
+    synopsis:"Un boss della droga messicano assume un avvocato per ritirarsi dalla criminalita e realizzare il sogno di diventare donna.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['audiard'],cast:['fernandez','gomez'],similar:['parasite','povereCreature','conclave']},
+
+  peccatori:{title:'I Peccatori',year:'2025',dur:'2h 17m',genre:'Thriller',rating:8.2,bg:'p12',
+    tags:['thriller','blues','mississippi','gemelli','soprannaturale','coogler','imax'],directors_list:['coogler'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:45'},
+    synopsis:"Due gemelli veterani tornano nel Mississippi degli anni 30 e aprono un locale, ma una forza oscura minaccia la comunita.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['coogler'],cast:['jordan','steinfeld'],similar:['padrino','fightclub','nosferatu']},
+
+  spirited:{title:'La Citta Incantata',year:'2001',dur:'2h 5m',genre:'Animazione',rating:8.6,bg:'p9',
+    tags:['animazione','miyazaki','giapponese','fantastico','crescita','studio ghibli'],directors_list:['miyazaki'],
+    trailer:{url:'https://www.youtube.com/watch?v=ByXuk9QqQkk',dur:'1:28'},
+    synopsis:"Una bambina di 10 anni si trova intrappolata in un mondo magico abitato da spiriti e deve lavorare per liberare i genitori.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['miyazaki'],cast:['hiiragi'],similar:['inside','oceania2','zootropolis2']},
+
+  lionking:{title:'Il Re Leone',year:'1994',dur:'1h 28m',genre:'Animazione',rating:8.5,bg:'p12',
+    tags:['animazione','disney','classico','crescita','africa','musica'],directors_list:['allers'],
+    trailer:{url:'https://www.youtube.com/watch?v=4sj1MT05lAA',dur:'1:45'},
+    synopsis:"Il giovane leone Simba fugge dopo la morte del padre e deve affrontare il suo destino per riprendersi il regno.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['allers'],cast:['broderick','irons'],similar:['inside','oceania2','spirited']},
+
+  blade:{title:'Blade Runner 2049',year:'2017',dur:'2h 44m',genre:'Sci-Fi',rating:8.0,bg:'p4',
+    tags:['fantascienza','replicanti','distopico','villeneuve','visivo','futuro'],directors_list:['villeneuve'],
+    trailer:{url:'https://www.youtube.com/watch?v=gCcx85zbxz4',dur:'3:30'},
+    synopsis:"Un blade runner scopre un segreto sepolto che potrebbe destabilizzare quel che resta della societa. Seguito del capolavoro di Scott.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['villeneuve'],cast:['gosling','ford','leto'],similar:['dune','interstellar','matrix']},
+
+  arrival:{title:'Arrival',year:'2016',dur:'1h 56m',genre:'Sci-Fi',rating:7.9,bg:'p7',
+    tags:['fantascienza','alieni','linguaggio','tempo','villeneuve','drammatico'],directors_list:['villeneuve'],
+    trailer:{url:'https://www.youtube.com/watch?v=tFMo3UJ4B4g',dur:'2:25'},
+    synopsis:"Una linguista viene reclutata per comunicare con gli alieni appena arrivati sulla Terra. Un film commovente sul tempo.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['villeneuve'],cast:['adams','renner'],similar:['interstellar','dune','inception']},
+
+  /* ── CINEMA ITALIANO ── */
+  vitaebella:{title:'La Vita e Bella',year:'1997',dur:'1h 56m',genre:'Commedia',rating:8.6,bg:'p5',
+    tags:['italiano','olocausto','commedia','benigni','oscar','padre'],directors_list:['benigni'],
+    trailer:{url:'https://www.youtube.com/watch?v=7PXE75GsBIs',dur:'2:07'},
+    synopsis:"Un ebreo italiano usa la fantasia per proteggere il figlio dalla dura realta di un campo di concentramento.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['benigni'],cast:['benigni','braschi'],similar:['schindler','forrest','padrino']},
+
+  cinemoPara:{title:'Nuovo Cinema Paradiso',year:'1988',dur:'2h 3m',genre:'Drammatico',rating:8.5,bg:'p5',
+    tags:['italiano','cinema','nostalgia','tornatore','sicilia','amicizia'],directors_list:['tornatore'],
+    trailer:{url:'https://www.youtube.com/watch?v=FT2HQGCFp80',dur:'2:18'},
+    synopsis:"Un famoso regista ricorda la sua infanzia in un paese siciliano e l amicizia con il proiezionista del cinema locale.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['tornatore'],cast:['noiret','cascio'],similar:['vitaebella','padrino','diamanti']},
+
+  ceAncoradomani:{title:"C e Ancora Domani",year:'2023',dur:'1h 58m',genre:'Drammatico',rating:7.8,bg:'p8',
+    tags:['italiano','cortellesi','femminismo','dopoguerra','roma','black white'],directors_list:['cortellesi'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:10'},
+    synopsis:"Roma 1946. Delia vive oppressa dal marito, ma un misterioso biglietto cambiera tutto. Il piu grande successo italiano del 2023.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['cortellesi'],cast:['cortellesi','mastandrea'],similar:['diamanti','pantaloniRosa','follemente']},
+
+  /* ── TOP 2024 ITALIA ── */
+  inside:{title:'Inside Out 2',year:'2024',dur:'1h 40m',genre:'Animazione',rating:7.8,bg:'p2',
+    tags:['animazione','famiglia','emozioni','commedia','adolescenza','pixar'],directors_list:['mann'],
+    trailer:{url:'https://www.youtube.com/watch?v=LEjhY15eCx0',dur:'2:18'},
+    synopsis:"Riley affronta l adolescenza con nuove emozioni dirompenti che mettono alla prova le emozioni originali. Record di incassi 2024.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['mann'],cast:['poehler','hawke'],similar:['oceania2','cattivissimo4','zootropolis2']},
+
+  deadpool:{title:'Deadpool & Wolverine',year:'2024',dur:'2h 8m',genre:'Azione',rating:7.7,bg:'p3',
+    tags:['supereroi','commedia','azione','marvel','wolverine','multiverso'],directors_list:['levy'],
+    trailer:{url:'https://www.youtube.com/watch?v=73_1biulkYk',dur:'2:32'},
+    synopsis:"Deadpool viene reclutato dall AVT e collabora con un Wolverine riluttante in una avventura nel multiverso Marvel.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['levy'],cast:['reynolds','jackman'],similar:['fantasticiquattro','thunderbolts','gladiatore2']},
+
+  oceania2:{title:'Oceania 2',year:'2024',dur:'1h 40m',genre:'Animazione',rating:7.0,bg:'p9',
+    tags:['animazione','avventura','oceano','famiglia','disney','musica'],directors_list:['williams'],
+    trailer:{url:'https://www.youtube.com/watch?v=PPRBQEHx7vQ',dur:'2:05'},
+    synopsis:"Vaiana intraprende un nuovo incredibile viaggio attraverso i mari del Pacifico per scoprire terre lontane e antichi segreti.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['williams'],cast:['cravalho'],similar:['inside','zootropolis2','cattivissimo4']},
+
+  cattivissimo4:{title:'Cattivissimo Me 4',year:'2024',dur:'1h 34m',genre:'Animazione',rating:6.5,bg:'p10',
+    tags:['animazione','gru','minions','commedia','famiglia','universal'],directors_list:['coffin'],
+    trailer:{url:'https://www.youtube.com/watch?v=9iEMCn-Sn98',dur:'2:28'},
+    synopsis:"Gru e la sua famiglia affrontano un nuovo nemico mentre i Minion scoprono nuove e caotiche avventure.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['coffin'],cast:['carell'],similar:['inside','oceania2','kungfupanda4']},
+
+  gladiatore2:{title:'Il Gladiatore 2',year:'2024',dur:'2h 28m',genre:'Azione',rating:7.1,bg:'p6',
+    tags:['azione','storia','roma','guerra','vendetta','ridley scott'],directors_list:['scott'],
+    trailer:{url:'https://www.youtube.com/watch?v=hGSLQNfKSeo',dur:'2:45'},
+    synopsis:"Lucio, nipote di Marco Aurelio, viene catturato e trasformato in gladiatore. Una storia di vendetta e onore nell antica Roma.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['scott'],cast:['mescal','pascal','washington'],similar:['gladiatore','oppenheimer','padrino']},
+
+  povereCreature:{title:'Povere Creature!',year:'2023',dur:'2h 21m',genre:'Drammatico',rating:8.0,bg:'p8',
+    tags:['surreale','autore','femminismo','vittoriano','oscar','lanthimos'],directors_list:['lanthimos'],
+    trailer:{url:'https://www.youtube.com/watch?v=RlWBZJ2EbGs',dur:'2:30'},
+    synopsis:"Bella Baxter, riportata in vita con il cervello di un bambino, fugge in una odissea attraverso i continenti. 4 Oscar 2024.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['lanthimos'],cast:['stone','dafoe'],similar:['conclave','diamanti','challengers']},
+
+  kungfupanda4:{title:'Kung Fu Panda 4',year:'2024',dur:'1h 34m',genre:'Animazione',rating:6.8,bg:'p11',
+    tags:['animazione','po','kungfu','commedia','famiglia','dreamworks'],directors_list:['mitchell'],
+    trailer:{url:'https://www.youtube.com/watch?v=_inKs4eeHiI',dur:'2:22'},
+    synopsis:"Po deve trovare un successore come Guerriero Dragone mentre affronta la Camaleonte, una villain capace di imitare i Maestri.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['mitchell'],cast:['black'],similar:['cattivissimo4','oceania2','inside']},
+
+  dune:{title:'Dune: Parte Due',year:'2024',dur:'2h 46m',genre:'Sci-Fi',rating:8.6,bg:'p5',
+    tags:['fantascienza','epico','avventura','deserto','politica','profezia'],directors_list:['villeneuve'],
+    trailer:{url:'https://www.youtube.com/watch?v=Way9Dexny3w',dur:'3:01'},
+    synopsis:"Paul Atreides unisce le forze con i Fremen per vendicare la famiglia e affrontare il suo destino su Arrakis.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['villeneuve'],cast:['chalamet','zendaya','austin'],similar:['interstellar','oppenheimer','avatarace']},
+
+  alien:{title:'Alien: Romulus',year:'2024',dur:'1h 59m',genre:'Horror',rating:7.4,bg:'p3',
+    tags:['horror','fantascienza','suspense','spazio','sopravvivenza','alien'],directors_list:['alvarez'],
+    trailer:{url:'https://www.youtube.com/watch?v=YAIKarOGZOo',dur:'2:48'},
+    synopsis:"Un gruppo di giovani colonizzatori affronta una forma di vita terrificante in una stazione spaziale abbandonata.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'},{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['alvarez'],cast:['jonsson','spaeny'],similar:['nosferatu','hereditary','midsommar']},
+
+  challengers:{title:'Challengers',year:'2024',dur:'2h 11m',genre:'Romantico',rating:7.5,bg:'p8',
+    tags:['romantico','sport','triangolo','tensione','stile','tennis'],directors_list:['guadagnino'],
+    trailer:{url:'https://www.youtube.com/watch?v=nSbzyEJ8X9E',dur:'2:33'},
+    synopsis:"Una storia di amore e rivalita tra tre tennisti. Luca Guadagnino firma un film di tensione emotiva e stile visivo.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['guadagnino'],cast:['zendaya','faist','oconnor'],similar:['lalaland','diamanti','conclave']},
+
+  conclave:{title:'Conclave',year:'2024',dur:'2h',genre:'Thriller',rating:7.5,bg:'p1',
+    tags:['thriller','religione','vaticano','papa','politica','segreti'],directors_list:['berger'],
+    trailer:{url:'https://www.youtube.com/watch?v=rMkHsVQMLrU',dur:'2:20'},
+    synopsis:"Dopo la morte del Papa, un cardinale supervisionante l'elezione del successore scopre oscuri segreti in Vaticano.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['berger'],cast:['tucci','lithgow'],similar:['gladiatore2','padrino','povereCreature']},
+
+  pantaloniRosa:{title:'Il Ragazzo dai Pantaloni Rosa',year:'2024',dur:'1h 42m',genre:'Drammatico',rating:7.6,bg:'p8',
+    tags:['italiano','bullismo','adolescenza','true story','commovente','scuola'],directors_list:['ferri'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:00'},
+    synopsis:"La storia vera di Andrea, un ragazzo vittima di cyberbullismo. Il film italiano piu visto del 2024.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['ferri'],cast:['carrino','pandolfi'],similar:['ceAncoradomani','diamanti','follemente']},
+
+  diamanti:{title:'Diamanti',year:'2024',dur:'2h',genre:'Drammatico',rating:7.3,bg:'p8',
+    tags:['italiano','ozpetek','donne','moda','amicizia','ensemble','Roma'],directors_list:['ozpetek'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:20'},
+    synopsis:"Ozpetek riunisce un cast corale di attrici per un affresco sulla femminilita e l amicizia nell Italia degli anni 70.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['ozpetek'],cast:['cortellesi','golino','ramazzotti'],similar:['ceAncoradomani','challengers','follemente']},
+
+  /* ── CLASSICI SEMPRE PRESENTI ── */
+  oppenheimer:{title:'Oppenheimer',year:'2023',dur:'3h 0m',genre:'Biografico',rating:9.0,bg:'p1',
+    tags:['biografico','storico','guerra','scienza','america','bomba'],directors_list:['nolan'],
+    trailer:{url:'https://www.youtube.com/watch?v=uYPbbksJxIg',dur:'3:23'},
+    synopsis:"La storia di J. Robert Oppenheimer e il Progetto Manhattan. Nolan esplora la scienza, la moralita e le conseguenze del potere atomico.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'},{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['nolan'],cast:['murphy','damon','blunt'],similar:['interstellar','padrino','gladiatore2']},
+
+  padrino:{title:'Il Padrino',year:'1972',dur:'2h 55m',genre:'Drammatico',rating:9.2,bg:'p6',
+    tags:['drammatico','crimine','famiglia','mafia','classico','potere'],directors_list:['coppola'],
+    trailer:{url:'https://www.youtube.com/watch?v=sY1S34973zA',dur:'3:07'},
+    synopsis:"La saga della famiglia Corleone, una delle piu potenti della mafia americana. Un capolavoro senza tempo di Coppola.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['coppola'],cast:['brando','pacino','keaton'],similar:['oppenheimer','interstellar','gladiatore2']},
+
+  interstellar:{title:'Interstellar',year:'2014',dur:'2h 49m',genre:'Sci-Fi',rating:8.8,bg:'p4',
+    tags:['fantascienza','spazio','tempo','avventura','emotivo','famiglia'],directors_list:['nolan'],
+    trailer:{url:'https://www.youtube.com/watch?v=zSWdZVtXT7E',dur:'3:32'},
+    synopsis:"Astronauti attraversano un wormhole alla ricerca di un nuovo mondo per l umanita, mentre il tempo scorre diversamente tra le stelle.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'},{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['nolan'],cast:['mcconaughey','hathaway','chastain'],similar:['dune','oppenheimer','avatarace']},
+
+  /* ── TOP 2025 ITALIA ── */
+  buencamino:{title:'Buen Camino',year:'2025',dur:'1h 55m',genre:'Commedia',rating:7.8,bg:'p11',
+    tags:['commedia','italiana','zalone','padre','figlia','cammino','viaggio'],directors_list:['nunziante'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:10'},
+    synopsis:"Un ricco imprenditore parte sulle tracce della figlia scomparsa lungo il Cammino di Santiago. Il film piu visto di sempre in Italia.",
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['nunziante'],cast:['zalone'],similar:['follemente','ceAncoradomani','vitaebella']},
+
+  liloStitch:{title:'Lilo & Stitch',year:'2025',dur:'1h 48m',genre:'Avventura',rating:7.2,bg:'p9',
+    tags:['disney','live action','famiglia','hawaii','alieno','amicizia','commedia'],directors_list:['hobson'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:15'},
+    synopsis:"Il live action Disney: Lilo, una bambina hawaiana solitaria, adotta quello che crede sia un cane ma e in realta un alieno fuggito.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['hobson'],cast:['kealoha'],similar:['oceania2','inside','zootropolis2']},
+
+  follemente:{title:'FolleMente',year:'2025',dur:'1h 55m',genre:'Commedia',rating:7.4,bg:'p10',
+    tags:['commedia','italiana','relazione','coppie','dialogo','genovese'],directors_list:['genovese'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:05'},
+    synopsis:"Le voci interiori di due persone che si incontrano rivelano pensieri e insicurezze nascosti. Terzo incasso italiano 2025.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['genovese'],cast:['cortellesi','scamarcio'],similar:['buencamino','diamanti','ceAncoradomani']},
+
+  avatarace:{title:'Avatar: Fuoco e Cenere',year:'2025',dur:'2h 37m',genre:'Sci-Fi',rating:7.6,bg:'p9',
+    tags:['fantascienza','pandora','cameron','visivo','avventura','natura','guerra'],directors_list:['cameron'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'3:00'},
+    synopsis:"Il terzo capitolo di Cameron riporta Jake e Neytiri su Pandora, affrontando il fuoco e le ceneri di un conflitto devastante.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['cameron'],cast:['worthington','saldana'],similar:['dune','interstellar','blade']},
+
+  zootropolis2:{title:'Zootropolis 2',year:'2025',dur:'1h 45m',genre:'Animazione',rating:7.3,bg:'p11',
+    tags:['animazione','disney','detective','animali','commedia','citta'],directors_list:['moore'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:10'},
+    synopsis:"Judy Hopps e Nick Wilde tornano in una nuova indagine tra le strade di Zootropolis, piu pericolosa e divertente che mai.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['moore'],cast:['goodwin','bateman'],similar:['inside','oceania2','liloStitch']},
+
+  nosferatu:{title:'Nosferatu',year:'2025',dur:'2h 12m',genre:'Horror',rating:7.7,bg:'p1',
+    tags:['horror','vampiro','gotico','eggers','atmosferico','oscuro','storico'],directors_list:['eggers'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:40'},
+    synopsis:"Robert Eggers reimmagina il capolavoro del cinema muto: la storia dell ossessione del Conte Orlok per Ellen Hutter.",
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['eggers'],cast:['skarsgard','taylor-joy','dafoe'],similar:['alien','hereditary','midsommar']},
+
+  fantasticiquattro:{title:'I Fantastici Quattro: Primi Passi',year:'2025',dur:'2h 10m',genre:'Azione',rating:7.5,bg:'p4',
+    tags:['marvel','supereroi','famiglia','fantascienza','retro','mcu'],directors_list:['shakman'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:50'},
+    synopsis:"Il reboot MCU dei Fantastici Quattro affronta Galactus in un universo retrofuturistico anni 60.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['shakman'],cast:['pascal','ejiofor'],similar:['deadpool','thunderbolts','avatarace']},
+
+  thunderbolts:{title:'Thunderbolts*',year:'2025',dur:'2h 7m',genre:'Azione',rating:7.3,bg:'p3',
+    tags:['marvel','supereroi','antieroi','azione','mcu','squadra'],directors_list:['schreier'],
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:35'},
+    synopsis:"Un gruppo di antieroi viene riunito dalla CIA per una missione suicida. L asterisco nel titolo nasconde un segreto MCU.",
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['schreier'],cast:['florence-pugh','bucky'],similar:['deadpool','fantasticiquattro','gladiatore2']},
+
+  /* ── SHAKESPEARE & TEATRO ── */
+  otello:{title:"Otello",year:'1995',dur:'3h 3m',genre:'Drammatico',rating:7.4,bg:'p6',
+    tags:['shakespeare','gelosia','moro','venezia','tradimento','classico','teatro'],directors_list:['parker'],
+    synopsis:"Il generale moro Otello viene manipolato dall'astuto Iago e cade in una spirale di gelosia ossessiva verso la moglie Desdemona. Adattamento cinematografico del capolavoro shakespeariano.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:20'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['parker'],cast:['fishburne','branagh','jacob'],similar:['padrino','fightclub','silence']},
+
+  amleto:{title:"Amleto",year:'1996',dur:'4h 2m',genre:'Drammatico',rating:7.7,bg:'p1',
+    tags:['shakespeare','vendetta','danimarca','morte','teatro','classico','fantasma'],directors_list:['branagh'],
+    synopsis:"Il principe Amleto scopre che il padre e stato assassinato dallo zio e decide di vendicarsi. Il piu celebre dramma shakespeariano.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:30'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['branagh'],cast:['branagh','winslet','depardieu'],similar:['padrino','inception','oppenheimer']},
+
+  /* ── WESTERN ── */
+  ilbuono:{title:'Il Buono, il Brutto, il Cattivo',year:'1966',dur:'2h 58m',genre:'Western',rating:9.0,bg:'p12',
+    tags:['western','leone','clint eastwood','spaghetti western','guerra civile','oro','duello'],directors_list:['leone'],
+    synopsis:"Tre pistoleri cercano oro sepolto durante la guerra civile americana. Il capolavoro di Sergio Leone con la colonna sonora di Ennio Morricone.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:40'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['leone'],cast:['eastwood','wallach','van-cleef'],similar:['padrino','gladiatore','oppenheimer']},
+
+  cera:{title:'C era una Volta il West',year:'1968',dur:'2h 45m',genre:'Western',rating:8.5,bg:'p12',
+    tags:['western','leone','ferrovia','vendetta','charles bronson','henry fonda','armonica'],directors_list:['leone'],
+    synopsis:"Una donna arriva in una terra contesa dalla ferrovia. Un misterioso uomo con l armonica cerca vendetta. Leone al suo apice.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:35'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['leone'],cast:['bronson','fonda','cardinale'],similar:['ilbuono','padrino','gladiatore']},
+
+  /* ── GUERRA ── */
+  apocalypse:{title:'Apocalypse Now',year:'1979',dur:'2h 33m',genre:'Guerra',rating:8.4,bg:'p3',
+    tags:['guerra','vietnam','follia','coppola','marlon brando','orrore','giungla'],directors_list:['coppola'],
+    synopsis:"Un capitano dell esercito americano viene inviato nella giungla cambogiana per eliminare un colonnello impazzito. Capolavoro sulla follia della guerra.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:45'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['coppola'],cast:['sheen','brando','duvall'],similar:['padrino','fightclub','schindler']},
+
+  salvate:{title:'Salvate il Soldato Ryan',year:'1998',dur:'2h 49m',genre:'Guerra',rating:8.6,bg:'p7',
+    tags:['guerra','normandia','sbarco','spielberg','tom hanks','seconda guerra mondiale','missione'],directors_list:['spielberg'],
+    synopsis:"Un plotone di soldati americani viene inviato in Francia dopo lo sbarco in Normandia per recuperare un soldato il cui fratello e stato ucciso.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:50'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['spielberg'],cast:['hanks','burns','sizemore'],similar:['schindler','oppenheimer','padrino']},
+
+  /* ── HORROR CLASSICO ── */
+  shining:{title:'Shining',year:'1980',dur:'2h 26m',genre:'Horror',rating:8.4,bg:'p1',
+    tags:['horror','kubrick','jack nicholson','albergo','isolamento','pazzia','soprannaturale'],directors_list:['kubrick'],
+    synopsis:"Uno scrittore porta la famiglia in un albergo isolato per l inverno. Sotto l influenza del luogo, impazzisce e diventa pericoloso.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:28'},
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['kubrick'],cast:['nicholson','duvall','lloyd'],similar:['hereditary','nosferatu','midsommar']},
+
+  esorcista:{title:'L Esorcista',year:'1973',dur:'2h 2m',genre:'Horror',rating:8.1,bg:'p3',
+    tags:['horror','demonio','possessione','esorcismo','chiesa','bambina','classico'],directors_list:['friedkin'],
+    synopsis:"Una bambina viene posseduta da un demonio. La madre disperata chiede aiuto a due sacerdoti per esorcizzarla.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:15'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['friedkin'],cast:['blair','burstyn','von-sydow'],similar:['shining','hereditary','nosferatu']},
+
+  /* ── FANTASCIENZA CLASSICA ── */
+  odissea:{title:'2001 Odissea nello Spazio',year:'1968',dur:'2h 29m',genre:'Sci-Fi',rating:8.3,bg:'p4',
+    tags:['fantascienza','kubrick','hal9000','monolite','spazio','evoluzione','filosofico'],directors_list:['kubrick'],
+    synopsis:"Un viaggio nello spazio rivela qualcosa di misterioso. HAL 9000, il computer di bordo, inizia a comportarsi in modo inquietante.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:20'},
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['kubrick'],cast:['dullea','lockwood'],similar:['interstellar','blade','arrival']},
+
+  bladerunner:{title:'Blade Runner',year:'1982',dur:'1h 57m',genre:'Sci-Fi',rating:8.1,bg:'p4',
+    tags:['fantascienza','replicanti','scott','futuro','distopico','android','pioggia'],directors_list:['scott'],
+    synopsis:"In un futuro distopico, un detective specializzato in replicanti viene richiamato per cacciare un gruppo di androidi fuggiti.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:30'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['scott'],cast:['ford','hauer','young'],similar:['blade','matrix','interstellar']},
+
+  /* ── COMMEDIA ITALIANA CLASSICA ── */
+  brutti:{title:'I Soliti Ignoti',year:'1958',dur:'1h 46m',genre:'Commedia',rating:8.0,bg:'p5',
+    tags:['italiano','commedia','ladri','roma','anni 50','monicelli','classico'],directors_list:['monicelli'],
+    synopsis:"Un gruppo di piccoli criminali romani pianifica una rapina al Monte di Pieta ma le cose vanno storte in modo comico.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:00'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['monicelli'],cast:['mastroianni','gassman','salvatori'],similar:['vitaebella','cinemoPara','padrino']},
+
+  postino:{title:'Il Postino',year:'1994',dur:'1h 48m',genre:'Romantico',rating:7.7,bg:'p9',
+    tags:['italiano','pablo neruda','poesia','amore','postino','isola','massimo troisi'],directors_list:['radford'],
+    synopsis:"Un postino analfabeta diventa amico del poeta Pablo Neruda e impara la poesia per corteggiare la donna che ama.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:05'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['radford'],cast:['troisi','noiret'],similar:['vitaebella','cinemoPara','amelie']},
+
+  /* ── DRAMMA PSICOLOGICO ── */
+  requiem:{title:'Requiem for a Dream',year:'2000',dur:'1h 42m',genre:'Drammatico',rating:8.3,bg:'p10',
+    tags:['droga','dipendenza','ossessione','aronofsky','incubo','psicologico','devastante'],directors_list:['aronofsky'],
+    synopsis:"Quattro persone vengono distrutte dalla dipendenza da droghe e ossessioni. Film devastante sulla perdita di se stessi.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:10'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['aronofsky'],cast:['burstyn','leto','connelly'],similar:['fightclub','joker','parasite']},
+
+  cignonero:{title:'Il Cigno Nero',year:'2010',dur:'1h 48m',genre:'Thriller',rating:8.0,bg:'p8',
+    tags:['balletto','doppelganger','ossessione','natalie portman','aronofsky','psicologico','danza'],directors_list:['aronofsky'],
+    synopsis:"Una ballerina ossessionata dalla perfezione precipita in un abisso psicologico mentre prepara il ruolo del cigno nero.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:15'},
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['aronofsky'],cast:['portman','kunis','hershey'],similar:['requiem','fightclub','silence']},
+
+  /* ── MUSICAL & COMMEDIA ── */
+  grease:{title:'Grease',year:'1978',dur:'1h 50m',genre:'Musical',rating:7.2,bg:'p8',
+    tags:['musical','anni 50','john travolta','scuola','rock','amore','classico'],directors_list:['kleiser'],
+    synopsis:"Due ragazzi innamorati si ritrovano alla stessa scuola e devono fare i conti con i rispettivi gruppi di amici.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:00'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['kleiser'],cast:['travolta','newton-john'],similar:['lalaland','miserables','barbie']},
+
+  /* ── CINEMA ASIATICO ── */
+  oldboy:{title:'Oldboy',year:'2003',dur:'2h',genre:'Thriller',rating:8.4,bg:'p3',
+    tags:['coreano','thriller','vendetta','mistero','park chan-wook','oscuro','twist'],directors_list:['park'],
+    synopsis:"Un uomo viene imprigionato per 15 anni senza sapere il perche. Quando viene liberato, ha 5 giorni per scoprire chi e il suo carnefice.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:20'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['park'],cast:['choi','yoo','kang'],similar:['parasite','fightclub','silence']},
+
+  /* ── BIOPIC & STORIA ── */
+  birdman:{title:'Birdman',year:'2014',dur:'1h 59m',genre:'Drammatico',rating:7.7,bg:'p10',
+    tags:['teatro','superhero','michael keaton','broadway','iñarritu','piano sequenza','oscar'],directors_list:['inarritu'],
+    synopsis:"Un ex attore famoso per aver interpretato un supereroe tenta il grande ritorno a teatro con uno spettacolo di Broadway.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:25'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['inarritu'],cast:['keaton','norton','stone'],similar:['cignonero','lalaland','joker']},
+
+  /* ── FANTASIA & AVVENTURA ── */
+  princessbride:{title:'La Storia Fantastica',year:'1987',dur:'1h 38m',genre:'Avventura',rating:8.0,bg:'p9',
+    tags:['fantasia','avventura','amore','commedia','spada','pirata','classico'],directors_list:['reiner'],
+    synopsis:"Un nonno racconta al nipote una storia d amore e avventura con principesse, pirati e duelli leggendari.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'1:55'},
+    streaming:[{l:'D',c:'#0063e5',n:'Disney+'}],
+    directors:['reiner'],cast:['elwes','wright','goldman'],similar:['lionking','spirited','inside']},
+
+  /* ── NOIR & THRILLER ── */
+  settimo:{title:'Seven',year:'1995',dur:'2h 7m',genre:'Thriller',rating:8.6,bg:'p3',
+    tags:['thriller','serial killer','sette peccati','fincher','brad pitt','morgan freeman','scuro'],directors_list:['fincher'],
+    synopsis:"Due detective indagano su una serie di omicidi ispirati ai sette peccati capitali in una citta buia e piovosa.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:15'},
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['fincher'],cast:['pitt','freeman','paltrow'],similar:['silence','fightclub','oldboy']},
+
+  usualSuspects:{title:'I Soliti Sospetti',year:'1995',dur:'1h 46m',genre:'Thriller',rating:8.5,bg:'p1',
+    tags:['thriller','kevin spacey','keyser soze','mistero','twist finale','crimine','noir'],directors_list:['singer'],
+    synopsis:"Cinque criminali vengono interrogati dopo una sparatoria. Uno di loro racconta la storia di Keyser Soze, un criminale leggendario.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:10'},
+    streaming:[{l:'A',c:'#f5a623',n:'Prime',tc:'#000'}],
+    directors:['singer'],cast:['spacey','palminteri','byrne'],similar:['settimo','silence','fightclub']},
+
+  /* ── ROMANTICO ── */
+  notting:{title:'Notting Hill',year:'1999',dur:'2h 4m',genre:'Romantico',rating:7.1,bg:'p8',
+    tags:['romantico','julia roberts','hugh grant','londra','attrice','libreria','commedia'],directors_list:['michell'],
+    synopsis:"Un libraio di Notting Hill si innamora di una famosa attrice americana. La storia d amore si scontra con la fama e la realta.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:00'},
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['michell'],cast:['roberts','grant'],similar:['lalaland','amelie','postino']},
+
+  /* ── ANIMAZIONE CLASSICA ── */
+  akira:{title:'Akira',year:'1988',dur:'2h 4m',genre:'Animazione',rating:8.0,bg:'p3',
+    tags:['anime','tokyo','fantascienza','poteri telecinetici','cyberpunk','giappone','classico'],directors_list:['otomo'],
+    synopsis:"In una Tokyo post-apocalittica, un motociclista sviluppa poteri telecinetici devastanti dopo un esperimento governativo.",
+    trailer:{url:'https://www.youtube.com/watch?v=placeholder',dur:'2:10'},
+    streaming:[{l:'N',c:'#e50914',n:'Netflix'}],
+    directors:['otomo'],cast:['kaneda','tetsuo'],similar:['matrix','blade','spirited']},
+
+};
+const PEOPLE = {
+  nolan:{name:'Christopher Nolan',role:'Regista',av:'CN',cls:'av-cn',films:[{id:'oppenheimer',title:'Oppenheimer',year:2023,rating:'9.2',role:'Regia',bg:'p1'},{id:'interstellar',title:'Interstellar',year:2014,rating:'8.8',role:'Regia',bg:'p4'},{id:'inception',title:'Inception',year:2010,rating:'8.8',role:'Regia',bg:'p7'},{id:'darkknight',title:'The Dark Knight',year:2008,rating:'9.0',role:'Regia',bg:'p4'}],stats:[{n:'4',l:'Film'},{n:'2000',l:'Attivo dal'},{n:'Oscar',l:'Premio'}]},
+  murphy:{name:'Cillian Murphy',role:'Attore',av:'CM',cls:'av-cm',films:[{id:'oppenheimer',title:'Oppenheimer',year:2023,rating:'9.2',role:'J.R. Oppenheimer',bg:'p1'},{id:'batman',title:'Batman Begins',year:2005,rating:'8.3',role:'Scarecrow',bg:'p4'}],stats:[{n:'2',l:'Film'},{n:'2002',l:'Attivo dal'},{n:'Oscar',l:'Premio'}]},
+  damon:{name:'Matt Damon',role:'Attore',av:'MD',cls:'av-md',films:[{id:'oppenheimer',title:'Oppenheimer',year:2023,rating:'9.2',role:'Leslie Groves',bg:'p1'},{id:'martian',title:'The Martian',year:2015,rating:'8.0',role:'Mark Watney',bg:'p2'}],stats:[{n:'2',l:'Film'},{n:'1997',l:'Attivo dal'},{n:'Oscar',l:'Premio'}]},
+  blunt:{name:'Emily Blunt',role:'Attrice',av:'EB',cls:'av-eb',films:[{id:'oppenheimer',title:'Oppenheimer',year:2023,rating:'9.2',role:'Katherine Puening',bg:'p1'},{id:'edge',title:'Edge of Tomorrow',year:2014,rating:'7.9',role:'Rita Vrataski',bg:'p5'}],stats:[{n:'2',l:'Film'},{n:'2006',l:'Attiva dal'},{n:'Golden Globe',l:'Premio'}]},
+  villeneuve:{name:'Denis Villeneuve',role:'Regista',av:'DV',cls:'av-cn',films:[{id:'dune',title:'Dune: Parte Due',year:2024,rating:'8.6',role:'Regia',bg:'p5'},{id:'dune1',title:'Dune',year:2021,rating:'8.1',role:'Regia',bg:'p5'},{id:'blade',title:'Blade Runner 2049',year:2017,rating:'8.0',role:'Regia',bg:'p4'},{id:'arrival',title:'Arrival',year:2016,rating:'7.9',role:'Regia',bg:'p7'}],stats:[{n:'4',l:'Film'},{n:'2009',l:'Attivo dal'},{n:'César',l:'Premio'}]},
+  chalamet:{name:'Timothée Chalamet',role:'Attore',av:'TC',cls:'av-cm',films:[{id:'dune',title:'Dune: Parte Due',year:2024,rating:'8.6',role:'Paul Atreides',bg:'p5'},{id:'dune1',title:'Dune',year:2021,rating:'8.1',role:'Paul Atreides',bg:'p5'}],stats:[{n:'2',l:'Film'},{n:'2014',l:'Attivo dal'},{n:'Oscar nom.',l:'Premio'}]},
+  zendaya:{name:'Zendaya',role:'Attrice',av:'ZE',cls:'av-md',films:[{id:'dune',title:'Dune: Parte Due',year:2024,rating:'8.6',role:'Chani',bg:'p5'},{id:'challengers',title:'Challengers',year:2024,rating:'7.5',role:'Tashi Duncan',bg:'p8'}],stats:[{n:'2',l:'Film'},{n:'2013',l:'Attiva dal'},{n:'Emmy',l:'Premio'}]},
+  austin:{name:'Austin Butler',role:'Attore',av:'AB',cls:'av-eb',films:[{id:'dune',title:'Dune: Parte Due',year:2024,rating:'8.6',role:'Feyd-Rautha',bg:'p5'},{id:'elvis',title:'Elvis',year:2022,rating:'7.3',role:'Elvis Presley',bg:'p5'}],stats:[{n:'2',l:'Film'},{n:'2011',l:'Attivo dal'},{n:'GG nom.',l:'Premio'}]},
+  alvarez:{name:'Fede Álvarez',role:'Regista',av:'FA',cls:'av-cm',films:[{id:'alien',title:'Alien: Romulus',year:2024,rating:'7.4',role:'Regia',bg:'p3'},{id:'evildead',title:'Evil Dead',year:2013,rating:'6.5',role:'Regia',bg:'p3'}],stats:[{n:'2',l:'Film'},{n:'2013',l:'Attivo dal'},{n:'—',l:'Premio'}]},
+  jonsson:{name:'David Jonsson',role:'Attore',av:'DJ',cls:'av-md',films:[{id:'alien',title:'Alien: Romulus',year:2024,rating:'7.4',role:'Andy',bg:'p3'}],stats:[{n:'1',l:'Film'},{n:'2019',l:'Attivo dal'},{n:'—',l:'Premio'}]},
+  spaeny:{name:'Cailee Spaeny',role:'Attrice',av:'CS',cls:'av-eb',films:[{id:'alien',title:'Alien: Romulus',year:2024,rating:'7.4',role:'Rain',bg:'p3'},{id:'priscilla',title:'Priscilla',year:2023,rating:'6.8',role:'Priscilla Presley',bg:'p8'}],stats:[{n:'2',l:'Film'},{n:'2018',l:'Attiva dal'},{n:'Coppa Volpi',l:'Premio'}]},
+  coppola:{name:'Francis Ford Coppola',role:'Regista',av:'FC',cls:'av-eb',films:[{id:'padrino',title:'Il Padrino',year:1972,rating:'9.2',role:'Regia',bg:'p6'},{id:'apocalypse',title:'Apocalypse Now',year:1979,rating:'8.4',role:'Regia',bg:'p3'}],stats:[{n:'2',l:'Film'},{n:'1969',l:'Attivo dal'},{n:'5 Oscar',l:'Premi'}]},
+  brando:{name:'Marlon Brando',role:'Attore',av:'MB',cls:'av-cn',films:[{id:'padrino',title:'Il Padrino',year:1972,rating:'9.2',role:'Don Vito Corleone',bg:'p6'}],stats:[{n:'1',l:'Film'},{n:'1946',l:'Attivo dal'},{n:'2 Oscar',l:'Premi'}]},
+  pacino:{name:'Al Pacino',role:'Attore',av:'AP',cls:'av-cm',films:[{id:'padrino',title:'Il Padrino',year:1972,rating:'9.2',role:'Michael Corleone',bg:'p6'}],stats:[{n:'1',l:'Film'},{n:'1969',l:'Attivo dal'},{n:'Oscar',l:'Premio'}]},
+  keaton:{name:'Diane Keaton',role:'Attrice',av:'DK',cls:'av-md',films:[{id:'padrino',title:'Il Padrino',year:1972,rating:'9.2',role:'Kay Adams',bg:'p6'}],stats:[{n:'1',l:'Film'},{n:'1970',l:'Attiva dal'},{n:'Oscar',l:'Premio'}]},
+  mcconaughey:{name:'Matthew McConaughey',role:'Attore',av:'MM',cls:'av-md',films:[{id:'interstellar',title:'Interstellar',year:2014,rating:'8.8',role:'Cooper',bg:'p4'}],stats:[{n:'1',l:'Film'},{n:'1993',l:'Attivo dal'},{n:'Oscar',l:'Premio'}]},
+  hathaway:{name:'Anne Hathaway',role:'Attrice',av:'AH',cls:'av-eb',films:[{id:'interstellar',title:'Interstellar',year:2014,rating:'8.8',role:'Amelia Brand',bg:'p4'}],stats:[{n:'1',l:'Film'},{n:'2001',l:'Attiva dal'},{n:'Oscar',l:'Premio'}]},
+  chastain:{name:'Jessica Chastain',role:'Attrice',av:'JC',cls:'av-cn',films:[{id:'interstellar',title:'Interstellar',year:2014,rating:'8.8',role:'Murph adulta',bg:'p4'}],stats:[{n:'1',l:'Film'},{n:'2008',l:'Attiva dal'},{n:'Oscar',l:'Premio'}]},
+  guadagnino:{name:'Luca Guadagnino',role:'Regista',av:'LG',cls:'av-cn',films:[{id:'challengers',title:'Challengers',year:2024,rating:'7.5',role:'Regia',bg:'p8'},{id:'bones',title:'Bones and All',year:2022,rating:'7.2',role:'Regia',bg:'p6'},{id:'cmbyn',title:'Call Me by Your Name',year:2017,rating:'7.9',role:'Regia',bg:'p2'}],stats:[{n:'3',l:'Film'},{n:'1999',l:'Attivo dal'},{n:'César',l:'Premio'}]},
+  faist:{name:'Mike Faist',role:'Attore',av:'MF',cls:'av-md',films:[{id:'challengers',title:'Challengers',year:2024,rating:'7.5',role:'Art Donaldson',bg:'p8'}],stats:[{n:'1',l:'Film'},{n:'2016',l:'Attivo dal'},{n:'Tony nom.',l:'Premio'}]},
+  oconnor:{name:"Josh O'Connor",role:'Attore',av:'JO',cls:'av-eb',films:[{id:'challengers',title:'Challengers',year:2024,rating:'7.5',role:'Patrick Zweig',bg:'p8'}],stats:[{n:'1',l:'Film'},{n:'2013',l:'Attivo dal'},{n:'Emmy',l:'Premio'}]},
+  mann:{name:'Kelsey Mann',role:'Regista',av:'KM',cls:'av-cn',films:[{id:'inside',title:'Inside Out 2',year:2024,rating:'7.8',role:'Regia',bg:'p2'}],stats:[{n:'1',l:'Film'},{n:'2024',l:'Attivo dal'},{n:'Annie Award',l:'Premio'}]},
+  poehler:{name:'Amy Poehler',role:'Attrice',av:'AP',cls:'av-eb',films:[{id:'inside',title:'Inside Out 2',year:2024,rating:'7.8',role:'Gioia (voce)',bg:'p2'}],stats:[{n:'1',l:'Film'},{n:'2015',l:'Attiva dal'},{n:'Emmy',l:'Premio'}]},
+  hawke:{name:'Maya Hawke',role:'Attrice',av:'MH',cls:'av-md',films:[{id:'inside',title:'Inside Out 2',year:2024,rating:'7.8',role:'Ansia (voce)',bg:'p2'}],stats:[{n:'1',l:'Film'},{n:'2017',l:'Attiva dal'},{n:'SAG nom.',l:'Premio'}]},
+};
+
+/* MOOD DATA */
+const MOOD_DATA = {
+  felice:{label:'Sei di buon umore — film che ti faranno sorridere',films:[{title:'Inside Out 2',year:2024,rating:'7.8',bg:'p2',id:'inside'},{title:'La vita è bella',year:1997,rating:'8.6',bg:'p5',id:'vita'},{title:'Soul',year:2020,rating:'8.0',bg:'p7',id:'soul'},{title:'The Grand Budapest Hotel',year:2014,rating:'8.1',bg:'p8',id:'budapest'}]},
+  triste:{label:'Lasciati andare — film intensi per le emozioni',films:[{title:"Schindler's List",year:1993,rating:'8.9',bg:'p6',id:'schindler'},{title:'Manchester by the Sea',year:2016,rating:'7.8',bg:'p4',id:'manchester'},{title:'Amour',year:2012,rating:'7.9',bg:'p1',id:'amour'},{title:'A Beautiful Mind',year:2001,rating:'8.2',bg:'p2',id:'beautiful'}]},
+  adrenalina:{label:'Cuore a mille — azione e tensione al massimo',films:[{title:'Top Gun: Maverick',year:2022,rating:'8.2',bg:'p4',id:'topgun'},{title:'Mad Max: Fury Road',year:2015,rating:'8.1',bg:'p3',id:'madmax'},{title:'The Dark Knight',year:2008,rating:'9.0',bg:'p1',id:'darkknight'},{title:'John Wick',year:2014,rating:'7.4',bg:'p6',id:'wick'}]},
+  romantico:{label:'Cuore aperto — storie d\'amore che restano',films:[{title:'Challengers',year:2024,rating:'7.5',bg:'p8',id:'challengers'},{title:'La La Land',year:2016,rating:'8.0',bg:'p5',id:'lalaland'},{title:'Before Sunrise',year:1995,rating:'8.1',bg:'p2',id:'before'},{title:'Eternal Sunshine',year:2004,rating:'8.3',bg:'p4',id:'eternal'}]},
+  pensieroso:{label:'Mente attiva — film che fanno riflettere',films:[{title:'Oppenheimer',year:2023,rating:'9.2',bg:'p1',id:'oppenheimer'},{title:'Parasite',year:2019,rating:'8.5',bg:'p7',id:'parasite'},{title:'Arrival',year:2016,rating:'7.9',bg:'p4',id:'arrival'},{title:'The Truman Show',year:1998,rating:'8.1',bg:'p2',id:'truman'}]},
+  spaventato:{label:'Vuoi brividi? I migliori del genere',films:[{title:'Alien: Romulus',year:2024,rating:'7.4',bg:'p3',id:'alien'},{title:'Hereditary',year:2018,rating:'7.3',bg:'p6',id:'hereditary'},{title:'Get Out',year:2017,rating:'7.7',bg:'p8',id:'getout'},{title:'Midsommar',year:2019,rating:'7.1',bg:'p5',id:'midsommar'}]},
+  nostalgico:{label:'Un viaggio nel passato — classici senza tempo',films:[{title:'Il Padrino',year:1972,rating:'9.2',bg:'p6',id:'padrino'},{title:'Nuovo Cinema Paradiso',year:1988,rating:'8.5',bg:'p5',id:'paradiso'},{title:'E.T.',year:1982,rating:'7.9',bg:'p2',id:'et'},{title:'Stand by Me',year:1986,rating:'8.1',bg:'p7',id:'standbyme'}]},
+  avventura:{label:'Spirito libero — avventure epiche da vivere',films:[{title:'Dune: Parte Due',year:2024,rating:'8.6',bg:'p5',id:'dune'},{title:'Interstellar',year:2014,rating:'8.8',bg:'p4',id:'interstellar'},{title:'Indiana Jones',year:1981,rating:'8.4',bg:'p5',id:'indiana'},{title:'Into the Wild',year:2007,rating:'8.1',bg:'p2',id:'wild'}]},
+};
+
+/* FILM POOL ONBOARDING */
+const FILM_POOL = [
+  {id:'oppenheimer',title:'Oppenheimer',year:2023,bg:'p1'},
+  {id:'dune',title:'Dune: Parte Due',year:2024,bg:'p5'},
+  {id:'interstellar',title:'Interstellar',year:2014,bg:'p4'},
+  {id:'padrino',title:'Il Padrino',year:1972,bg:'p6'},
+  {id:'inside',title:'Inside Out 2',year:2024,bg:'p2'},
+  {id:'deadpool',title:'Deadpool & Wolverine',year:2024,bg:'p3'},
+  {id:'oceania2',title:'Oceania 2',year:2024,bg:'p9'},
+  {id:'cattivissimo4',title:'Cattivissimo Me 4',year:2024,bg:'p10'},
+  {id:'gladiatore2',title:'Il Gladiatore 2',year:2024,bg:'p6'},
+  {id:'alien',title:'Alien: Romulus',year:2024,bg:'p3'},
+  {id:'challengers',title:'Challengers',year:2024,bg:'p8'},
+  {id:'povereCreature',title:'Povere Creature!',year:2023,bg:'p8'},
+  {id:'conclave',title:'Conclave',year:2024,bg:'p1'},
+  {id:'pantaloniRosa',title:'Il Ragazzo dai Pantaloni Rosa',year:2024,bg:'p8'},
+  {id:'kungfupanda4',title:'Kung Fu Panda 4',year:2024,bg:'p11'},
+  {id:'diamanti',title:'Diamanti',year:2024,bg:'p8'},
+  {id:'buencamino',title:'Buen Camino',year:2025,bg:'p11'},
+  {id:'liloStitch',title:'Lilo & Stitch',year:2025,bg:'p9'},
+  {id:'follemente',title:'FolleMente',year:2025,bg:'p10'},
+  {id:'avatarace',title:'Avatar: Fuoco e Cenere',year:2025,bg:'p9'},
+  {id:'zootropolis2',title:'Zootropolis 2',year:2025,bg:'p11'},
+  {id:'nosferatu',title:'Nosferatu',year:2025,bg:'p1'},
+  {id:'fantasticiquattro',title:'I Fantastici Quattro',year:2025,bg:'p4'},
+  {id:'thunderbolts',title:'Thunderbolts*',year:2025,bg:'p3'},
+  {id:'inception',title:'Inception',year:2010,bg:'p4'},
+  {id:'matrix',title:'Matrix',year:1999,bg:'p11'},
+  {id:'fightclub',title:'Fight Club',year:1999,bg:'p3'},
+  {id:'joker',title:'Joker',year:2019,bg:'p10'},
+  {id:'parasite',title:'Parasite',year:2019,bg:'p7'},
+  {id:'lalaland',title:'La La Land',year:2016,bg:'p8'},
+  {id:'whiplash',title:'Whiplash',year:2014,bg:'p6'},
+  {id:'forrest',title:'Forrest Gump',year:1994,bg:'p2'},
+  {id:'darkknightfilm',title:'The Dark Knight',year:2008,bg:'p4'},
+  {id:'schindler',title:"Schindler's List",year:1993,bg:'p6'},
+  {id:'gladiatore',title:'Il Gladiatore',year:2000,bg:'p6'},
+  {id:'vitaebella',title:'La Vita è Bella',year:1997,bg:'p5'},
+  {id:'ceAncoradomani',title:"C'è Ancora Domani",year:2023,bg:'p8'},
+  {id:'spirited',title:'La Città Incantata',year:2001,bg:'p9'},
+  {id:'lionking',title:'Il Re Leone',year:1994,bg:'p12'},
+  {id:'blade',title:'Blade Runner 2049',year:2017,bg:'p4'},
+  {id:'arrival',title:'Arrival',year:2016,bg:'p7'},
+  {id:'silence',title:'Il Silenzio degli Innocenti',year:1991,bg:'p3'},
+  {id:'hereditary',title:'Hereditary',year:2018,bg:'p3'},
+  {id:'midsommar',title:'Midsommar',year:2019,bg:'p5'},
+  {id:'barbie',title:'Barbie',year:2023,bg:'p8'},
+  {id:'emiliaperez',title:'Emilia Pérez',year:2024,bg:'p10'},
+  {id:'peccatori',title:'I Peccatori',year:2025,bg:'p12'},
+  {id:'amelie',title:'Il Favoloso Mondo di Amélie',year:2001,bg:'p8'},
+  {id:'cinemoPara',title:'Nuovo Cinema Paradiso',year:1988,bg:'p5'},
+];
+
+/* ══════════════════════════════════════════
+   STATO GLOBALE
+   ══════════════════════════════════════════ */
+let currentTab = 'home';
+let currentFilmId = null;
+let activeMoodBtn = null;
+let selectedFilms = new Set();       // onboarding
+let likedFilms = new Set();          // cuori
+let listedFilms = new Set();         // lista
+let userProfile = {
+  name:'Marco', initials:'M',
+  avatarGrad:'linear-gradient(135deg,#e8b44a,#c94040)',
+  avatarColor:'#000', username:'marcorossi', city:'Roma'
+};
+
+/* ══════════════════════════════════════════
+   MOTORE DI RACCOMANDAZIONE
+   Punteggio per ogni film non ancora selezionato/visto:
+   +3 per ogni tag in comune con film già visti
+   +2 se stesso genere
+   +2 se stesso regista
+   +1.5 per ogni punto di rating sopra 7.5
+   ══════════════════════════════════════════ */
+function computeRecommendations(sourceIds, excludeIds = []) {
+  // Profilo gusti: raccoglie tags, generi, registi dai film sorgente
+  const tagsMap = {};
+  const genreMap = {};
+  const dirMap = {};
+  let totalRating = 0, count = 0;
+
+  sourceIds.forEach(id => {
+    const f = FILMS[id]; if (!f) return;
+    (f.tags||[]).forEach(t => { tagsMap[t] = (tagsMap[t]||0) + 1; });
+    genreMap[f.genre] = (genreMap[f.genre]||0) + 1;
+    (f.directors_list||[]).forEach(d => { dirMap[d] = (dirMap[d]||0) + 1; });
+    totalRating += f.rating; count++;
+  });
+  const avgRating = count > 0 ? totalRating/count : 8;
+
+  // Calcola score per tutti i film NON in sourceIds e NON in excludeIds
+  const exclude = new Set([...sourceIds, ...excludeIds]);
+  const scored = [];
+
+  Object.entries(FILMS).forEach(([fid, f]) => {
+    if (exclude.has(fid)) return;
+    let score = 0;
+    const reasons = [];
+
+    // Tag match
+    let tagHits = 0;
+    (f.tags||[]).forEach(t => { if (tagsMap[t]) tagHits += tagsMap[t]; });
+    if (tagHits > 0) { score += tagHits * 3; reasons.push({icon:'ti-tag', text: 'Temi affini ai tuoi preferiti'}); }
+
+    // Genere match
+    if (genreMap[f.genre]) {
+      score += genreMap[f.genre] * 2;
+      reasons.push({icon:'ti-category', text: `Genere ${f.genre} che apprezzi`});
+    }
+
+    // Regista match
+    let dirHit = false;
+    (f.directors_list||[]).forEach(d => { if (dirMap[d]) { score += dirMap[d]*2; dirHit = true; }});
+    if (dirHit) reasons.push({icon:'ti-movie', text: 'Regista già nei tuoi film'});
+
+    // Rating bonus
+    if (f.rating >= 8.0) {
+      score += (f.rating - 7.5) * 1.5;
+      reasons.push({icon:'ti-star', text: `Rating ${f.rating} — molto apprezzato`});
+    }
+
+    // Match % rispetto al profilo medio
+    const matchPct = Math.min(99, Math.round((score / Math.max(1, sourceIds.length * 5)) * 100));
+
+    scored.push({ id: fid, film: f, score, matchPct: Math.max(matchPct, 65), reasons: reasons.slice(0,2) });
+  });
+
+  return scored.sort((a,b) => b.score - a.score);
+}
+
+/* ══════════════════════════════════════════
+   RENDER "PER TE" IN HOME
+   ══════════════════════════════════════════ */
+function renderPerTe() {
+  const sourceIds = [...selectedFilms, ...likedFilms];
+  if (sourceIds.length === 0) {
+    document.getElementById('perte-scroll').innerHTML =
+      '<div style="padding:0 4px;color:var(--muted);font-size:12px;">Aggiungi film ai preferiti per ricevere consigli personalizzati.</div>';
+    return;
+  }
+
+  const recs = computeRecommendations(sourceIds, [...listedFilms]);
+  const top = recs.slice(0, 8);
+
+  document.getElementById('perte-subtitle').textContent =
+    `Basato su ${sourceIds.length} film del tuo profilo`;
+
+  document.getElementById('perte-scroll').innerHTML = top.map(r => `
+    <div class="forte-card" onclick="showDetail('${r.id}')">
+      <div class="forte-poster ${r.film.bg}">
+        <div class="forte-match">${r.matchPct}% match</div>
+        <div class="forte-why">
+          ${r.reasons[0] ? `<div class="forte-why-label"><i class="ti ${r.reasons[0].icon}" style="font-size:10px;"></i> ${r.reasons[0].text}</div>` : ''}
+        </div>
+      </div>
+      <div class="forte-title">${r.film.title}</div>
+      <div class="forte-year">${r.film.year} · ${r.film.genre}</div>
+    </div>
+  `).join('');
+}
+
+/* ══════════════════════════════════════════
+   AFFINITÀ NELLA SCHEDA FILM
+   ══════════════════════════════════════════ */
+function renderAffinityBadges(fid) {
+  const sourceIds = [...selectedFilms, ...likedFilms];
+  if (sourceIds.length === 0) { document.getElementById('d-affinity').innerHTML=''; return; }
+
+  const f = FILMS[fid]; if (!f) return;
+  const tagsMap = {};
+  const genreMap = {};
+  const dirMap = {};
+  sourceIds.forEach(id => {
+    const sf = FILMS[id]; if (!sf) return;
+    (sf.tags||[]).forEach(t => tagsMap[t] = true);
+    genreMap[sf.genre] = true;
+    (sf.directors_list||[]).forEach(d => dirMap[d] = true);
+  });
+
+  const badges = [];
+  const matchTags = (f.tags||[]).filter(t => tagsMap[t]);
+  if (matchTags.length) badges.push({icon:'ti-tag', text: matchTags.slice(0,2).join(', '), match:true});
+  if (genreMap[f.genre]) badges.push({icon:'ti-category', text: f.genre, match:true});
+  const matchDir = (f.directors_list||[]).filter(d => dirMap[d]);
+  if (matchDir.length) badges.push({icon:'ti-movie', text:'Regista che conosci', match:true});
+  if (f.rating >= 8.5) badges.push({icon:'ti-star', text:`Rating ${f.rating}`, match:false});
+
+  document.getElementById('d-affinity').innerHTML = badges.slice(0,4).map(b =>
+    `<div class="affinity-pill ${b.match?'match':''}"><i class="ti ${b.icon}"></i> ${b.text}</div>`
+  ).join('');
+}
+
+/* PERCHÉ POTREBBE PIACERTI */
+function renderPerche(fid) {
+  const sourceIds = [...selectedFilms, ...likedFilms];
+  const wrap = document.getElementById('d-perche-wrap');
+  const el = document.getElementById('d-perche');
+  if (sourceIds.length === 0) { wrap.style.display='none'; return; }
+  wrap.style.display='block';
+
+  const recs = computeRecommendations(sourceIds);
+  const thisRec = recs.find(r => r.id === fid);
+  if (!thisRec || thisRec.reasons.length === 0) { wrap.style.display='none'; return; }
+
+  el.innerHTML = thisRec.reasons.map(r =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:#bbb;">
+      <i class="ti ${r.icon}" style="color:var(--accent);font-size:14px;flex-shrink:0;"></i>
+      <span>${r.text}</span>
+    </div>`
+  ).join('') +
+  `<div style="margin-top:8px;display:flex;align-items:center;gap:6px;">
+    <div style="height:4px;flex:1;background:var(--bg4);border-radius:2px;overflow:hidden;">
+      <div style="height:100%;width:${thisRec.matchPct}%;background:var(--accent);border-radius:2px;"></div>
+    </div>
+    <span style="font-size:11px;color:var(--accent);font-weight:700;">${thisRec.matchPct}% match</span>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════
+   INTERAZIONI (cuore / lista)
+   ══════════════════════════════════════════ */
+function toggleHeart() {
+  const btn = document.getElementById('btn-heart');
+  if (likedFilms.has(currentFilmId)) {
+    likedFilms.delete(currentFilmId);
+    btn.classList.remove('active-heart');
+    btn.innerHTML = '<i class="ti ti-heart"></i>';
+  } else {
+    likedFilms.add(currentFilmId);
+    btn.classList.add('active-heart');
+    btn.innerHTML = '<i class="ti ti-heart-filled" style="color:var(--accent2);"></i>';
+  }
+  renderPerTe();
+  renderAffinityBadges(currentFilmId);
+  renderPerche(currentFilmId);
+}
+
+function toggleList() {
+  const btn = document.getElementById('btn-addlist');
+  if (listedFilms.has(currentFilmId)) {
+    listedFilms.delete(currentFilmId);
+    btn.classList.remove('active-list');
+    btn.innerHTML = '<i class="ti ti-plus"></i> La mia lista';
+  } else {
+    listedFilms.add(currentFilmId);
+    btn.classList.add('active-list');
+    btn.innerHTML = '<i class="ti ti-check"></i> In lista';
+  }
+}
+
+/* ══════════════════════════════════════════
+   ONBOARDING
+   ══════════════════════════════════════════ */
+function goOb(step) {
+  document.querySelectorAll('.ob-screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('ob'+step);
+  if (el) el.classList.add('active');
+  if (step === 4) renderFilmGrid();
+}
+function checkOb1() {
+  const n = document.getElementById('inp-name').value.trim();
+  const u = document.getElementById('inp-user').value.trim();
+  document.getElementById('btn-ob1').disabled = !(n && u);
+}
+function setAvatarColor(dot, gradient, tc) {
+  document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+  dot.classList.add('selected');
+  userProfile.avatarGrad = gradient; userProfile.avatarColor = tc;
+  const av = document.getElementById('ob-avatar-preview');
+  av.style.background = gradient; av.style.color = tc;
+}
+function setAvatarInitials(val) { document.getElementById('ob-avatar-preview').textContent = val||'M'; }
+function autoFillInitials() {
+  const name = document.getElementById('inp-name').value || 'Marco Rossi';
+  const parts = name.trim().split(' ');
+  const ini = (parts.length>=2 ? parts[0][0]+parts[1][0] : parts[0].slice(0,2)).toUpperCase();
+  document.getElementById('inp-initials').value = ini;
+  setAvatarInitials(ini);
+}
+/* ═══════════════════════════════════════════
+   MODALITÀ DETECTIVE — Una chiamata, prompt potente
+   1 sessione = 1 tentativo (scatta all'invio)
+   ═══════════════════════════════════════════ */
+let detectiveActive  = false;
+let detectiveHistory = [];   // descrizioni accumulate
+let detectiveShown   = [];   // film gia mostrati
+
+function toggleDetective() {
+  detectiveActive = !detectiveActive;
+  const panel  = document.getElementById('detective-panel');
+  const def    = document.getElementById('search-default-content');
+  const banner = document.getElementById('detective-banner-el');
+  if (detectiveActive) {
+    panel.style.display  = 'block';
+    def.style.display    = 'none';
+    if (banner) banner.style.display = 'none';
+    resetDetective();
+    setTimeout(() => { const el = document.getElementById('detective-input'); if(el) el.focus(); }, 120);
+  } else {
+    panel.style.display  = 'none';
+    def.style.display    = 'block';
+    if (banner) banner.style.display = 'block';
+  }
+}
+
+function fillDetExample(el) {
+  const inp = document.getElementById('detective-input');
+  if (inp) { inp.value = el.textContent.replace(/^.\s/,'').trim(); inp.focus(); }
+}
+
+function resetDetective() {
+  detectiveHistory = [];
+  detectiveShown   = [];
+  const show  = ['detective-form'];
+  const hide  = ['detective-status','detective-thinking','detective-verdict',
+                  'detective-results','detective-refine','detective-success'];
+  show.forEach(id => { const el=document.getElementById(id); if(el) el.style.display='block'; });
+  hide.forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+  const fb = document.getElementById('detective-feedback');
+  if (fb) fb.style.display = 'block';
+  ['detective-input','detective-quote-input','detective-refine-input','detective-refine-quote']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function detectiveFeedbackYes() {
+  document.getElementById('detective-feedback').style.display = 'none';
+  document.getElementById('detective-success').style.display  = 'block';
+}
+
+function detectiveFeedbackNo() {
+  document.getElementById('detective-feedback').style.display = 'none';
+  document.getElementById('detective-refine').style.display   = 'block';
+  setTimeout(() => { const el=document.getElementById('detective-refine-input'); if(el) el.focus(); }, 100);
+}
+
+async function runDetectiveRefine() {
+  const extra = document.getElementById('detective-refine-input').value.trim();
+  const quote = document.getElementById('detective-refine-quote').value.trim();
+  if (extra) detectiveHistory.push('Dettaglio aggiuntivo: ' + extra);
+  if (quote) detectiveHistory.push('Citazione aggiuntiva: "' + quote + '"');
+  document.getElementById('detective-refine').style.display  = 'none';
+  document.getElementById('detective-results').style.display = 'none';
+  document.getElementById('detective-verdict').style.display = 'none';
+  await _callDetective();
+}
+
+async function runDetective() {
+  const desc  = document.getElementById('detective-input').value.trim();
+  const quote = document.getElementById('detective-quote-input').value.trim();
+  if (!desc && !quote) return;
+  if (!checkDetectiveLimit()) return;
+  detectiveUsed++;
+  updateDetectiveCounter();
+  detectiveHistory = [];
+  detectiveShown   = [];
+  if (desc)  detectiveHistory.push('Descrizione: ' + desc);
+  if (quote) detectiveHistory.push('Citazione esatta: "' + quote + '"');
+  document.getElementById('detective-form').style.display = 'none';
+  await _callDetective();
+}
+
+async function _callDetective() {
+  const statusEl = document.getElementById('detective-status');
+  const thinkEl  = document.getElementById('detective-thinking');
+  if (statusEl) statusEl.style.display = 'block';
+  if (thinkEl)  thinkEl.style.display  = 'flex';
+
+  const stepTexts = [
+    'Analizzo gli indizi…',
+    'Cerco tra milioni di film…',
+    'Verifico le corrispondenze…',
+    'Ho una pista…'
+  ];
+  let si = 0;
+  const stepEl = document.getElementById('detective-step-text');
+  if (stepEl) stepEl.textContent = stepTexts[0];
+  const stepTimer = setInterval(() => {
+    si = Math.min(si + 1, stepTexts.length - 1);
+    if (stepEl) stepEl.textContent = stepTexts[si];
+  }, 900);
+
+  // Clue tag animati
+  const cluesEl = document.getElementById('detective-clues');
+  if (cluesEl) {
+    cluesEl.innerHTML = '';
+    const lastDesc = detectiveHistory[detectiveHistory.length-1] || '';
+    lastDesc.split(' ')
+      .filter(w => w.length > 3)
+      .slice(0, 6)
+      .map(w => w.replace(/[^a-zA-ZàèéìíòóùúÀÈÉÌÍÒÓÙÚ]/g,''))
+      .filter(Boolean)
+      .forEach((w, i) => {
+        setTimeout(() => {
+          const tag = document.createElement('div');
+          tag.className = 'detective-clue';
+          tag.innerHTML = '<i class="ti ti-tag" style="font-size:10px;margin-right:3px;"></i>' + w;
+          cluesEl.appendChild(tag);
+        }, i * 200);
+      });
+  }
+
+  try {
+    // Chiama il backend Vercel — la chiave Groq è protetta sul server
+    const res = await fetch('/api/detective', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: detectiveHistory,
+        shown:   detectiveShown
+      })
+    });
+
+    clearInterval(stepTimer);
+    if (statusEl) statusEl.style.display = 'none';
+    if (thinkEl)  thinkEl.style.display  = 'none';
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Errore server ' + res.status);
+    }
+
+    const parsed = await res.json();
+
+    // Aggiorna film già mostrati
+    detectiveShown = [...detectiveShown, ...(parsed.results||[]).map(r => r.title)];
+
+    // Mostra verdetto
+    const verdictEl = document.getElementById('detective-verdict');
+    const verdTxtEl = document.getElementById('detective-verdict-text');
+    if (verdictEl) verdictEl.style.display = 'block';
+    if (verdTxtEl) verdTxtEl.textContent = parsed.verdict || '';
+
+    // Render risultati
+    const resultsEl = document.getElementById('detective-results');
+    const lblEl     = document.getElementById('detective-results-label');
+    const listEl    = document.getElementById('detective-results-list');
+    const fbEl      = document.getElementById('detective-feedback');
+    const bgs = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'];
+
+    if (resultsEl) resultsEl.style.display = 'block';
+    if (fbEl)      fbEl.style.display      = 'block';
+    if (lblEl)     lblEl.textContent = parsed.identified_title
+      ? 'Film identificato: ' + parsed.identified_title
+      : 'Film che potrebbero corrispondere';
+
+    if (listEl) {
+      listEl.innerHTML = (parsed.results || []).map((r, idx) => {
+        const bgsIdx = bgs[idx % bgs.length];
+        const isTop = idx === 0;
+        return `<div class="list-item fade-in" style="animation-delay:${idx*60}ms;cursor:pointer;${isTop?'background:rgba(232,180,74,0.05);border-radius:10px;':''}"
+          onclick="showDetail('${r.catalog_id||''}')">
+          <div class="list-thumb ${bgsIdx}" style="position:relative;">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+              <div style="background:rgba(0,0,0,0.72);border-radius:6px;padding:2px 6px;font-size:10px;font-weight:700;color:var(--accent);">${r.confidence||'?'}%</div>
+            </div>
+          </div>
+          <div class="list-info" style="flex:1;">
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+              <div class="list-title2">${r.title}</div>
+              ${isTop&&parsed.identified_title?'<span style="font-size:9px;background:var(--accent);color:#000;border-radius:8px;padding:1px 7px;font-weight:700;">TROVATO</span>':''}
+            </div>
+            <div class="list-meta2">${r.year||''} · ${r.country||''} · ${r.genre||''}</div>
+            <div style="font-size:11px;color:#bbb;margin-top:3px;font-style:italic;">
+              <i class="ti ti-quote" style="font-size:10px;"></i> ${r.reason||''}
+            </div>
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--muted);font-size:16px;flex-shrink:0;"></i>
+        </div>`;
+      }).join('');
+    }
+
+  } catch(err) {
+    clearInterval(stepTimer);
+    if (statusEl) statusEl.style.display = 'none';
+    if (thinkEl)  thinkEl.style.display  = 'none';
+    const verdictEl = document.getElementById('detective-verdict');
+    const verdTxtEl = document.getElementById('detective-verdict-text');
+    if (verdictEl) verdictEl.style.display = 'block';
+    if (verdTxtEl) {
+      verdTxtEl.textContent = 'Errore: ' + err.message + '. Controlla la connessione.';
+      verdTxtEl.style.color = 'var(--accent2)';
+    }
+    // Rimostra il form
+    const formEl = document.getElementById('detective-form');
+    if (formEl) formEl.style.display = 'block';
+  }
+}
+
+function selectSearchMood(mood, btn) {
+  // toggle: se già attivo, reset
+  if (activeSearchMoodBtn === btn) { clearSearchMood(); return; }
+
+  // Deseleziona precedente
+  if (activeSearchMoodBtn) activeSearchMoodBtn.classList.remove('active-mood');
+  btn.classList.add('active-mood');
+  activeSearchMoodBtn = btn;
+
+  const data = MOOD_DATA[mood];
+  document.getElementById('search-mood-title').textContent = data.label.split('—')[0].trim();
+  document.getElementById('search-mood-sub').textContent = data.label.split('—')[1]?.trim() || '';
+
+  // Render film come list-item
+  document.getElementById('search-mood-films').innerHTML = data.films.map(f => `
+    <div class="list-item" onclick="showDetail('${f.id}')">
+      <div class="list-thumb ${f.bg}" style="position:relative;">
+        <div style="position:absolute;bottom:2px;left:2px;right:2px;background:rgba(0,0,0,0.7);border-radius:3px;text-align:center;font-size:9px;font-weight:700;color:var(--accent);padding:1px 0;">${f.rating}</div>
+      </div>
+      <div class="list-info">
+        <div class="list-title2">${f.title}</div>
+        <div class="list-meta2">${f.year}</div>
+      </div>
+      <i class="ti ti-chevron-right" style="color:var(--muted);font-size:16px;"></i>
+    </div>
+  `).join('');
+
+  // Mostra risultati, nascondi generi/tendenze
+  const res = document.getElementById('search-mood-result');
+  res.style.display = 'block';
+  res.classList.add('fade-in');
+  setTimeout(() => res.classList.remove('fade-in'), 400);
+  document.getElementById('search-genres-section').style.display = 'none';
+}
+
+function clearSearchMood() {
+  if (activeSearchMoodBtn) { activeSearchMoodBtn.classList.remove('active-mood'); activeSearchMoodBtn = null; }
+  document.getElementById('search-mood-result').style.display = 'none';
+  document.getElementById('search-genres-section').style.display = 'block';
+}
+
+function toggleObMood(btn) { btn.classList.toggle('selected'); }
+function renderFilmGrid() {
+  const shuffled = [...FILM_POOL].sort(() => Math.random()-0.5);
+  document.getElementById('film-grid').innerHTML = shuffled.map(f => `
+    <div class="fg-card ${f.bg} ${selectedFilms.has(f.id)?'fg-card-selected':''}" onclick="toggleFilm('${f.id}',this)">
+      <div class="fg-check"><i class="ti ti-check"></i></div>
+      <div class="fg-poster-title">${f.title}<div class="fg-year">${f.year}</div></div>
+    </div>`).join('');
+}
+function toggleFilm(id, card) {
+  if (selectedFilms.has(id)) { selectedFilms.delete(id); card.classList.remove('fg-card-selected'); }
+  else { selectedFilms.add(id); card.classList.add('fg-card-selected'); }
+  const c = selectedFilms.size;
+  document.getElementById('sel-count').textContent = c;
+  document.getElementById('btn-ob3').disabled = c < 5;
+}
+function finishOnboarding() {
+  const name = document.getElementById('inp-name').value||'Marco';
+  const user = document.getElementById('inp-user').value||'utente';
+  const city = document.getElementById('inp-city').value||'';
+  const initials = document.getElementById('inp-initials').value || name[0].toUpperCase();
+  userProfile = { name, username:user.replace('@',''), city, initials, avatarGrad:userProfile.avatarGrad, avatarColor:userProfile.avatarColor };
+  document.getElementById('welcome-name').textContent = name.split(' ')[0];
+  document.getElementById('ob5-count').textContent = selectedFilms.size;
+  goOb(5);
+}
+function enterApp() {
+  document.querySelectorAll('.ob-screen').forEach(s => s.classList.remove('active'));
+  applyProfileToApp();
+  renderPerTe();
+  showScreen('home');
+}
+function applyProfileToApp() {
+  openSettings();
+  const p = userProfile;
+  const firstName = p.name.split(' ')[0];
+  ['home-avatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.background = p.avatarGrad;
+    el.style.color = p.avatarColor;
+    el.textContent = p.initials;
+  });
+  document.getElementById('home-greeting').textContent = 'Buona serata, '+firstName;
+  const pa = document.getElementById('profile-avatar-el');
+  pa.style.background = p.avatarGrad; pa.style.color = p.avatarColor; pa.textContent = p.initials;
+  document.getElementById('profile-name-el').textContent = p.name;
+  document.getElementById('profile-sub-el').textContent = '@'+p.username+(p.city?' · '+p.city:'');
+  document.getElementById('stat-visti').textContent = selectedFilms.size + 137;
+}
+
+/* ══════════════════════════════════════════
+   NAVIGAZIONE APP
+   ══════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+function switchTab(tab) {
+  if (tab === 'settings') { openSettings(); showScreen('settings'); return; }
+  currentTab = tab;
+  showScreen(tab);
+}
+function goBack() { showScreen(currentTab); }
+function goBackToDetail() { if(currentFilmId) showDetail(currentFilmId); else showScreen(currentTab); }
+
+/* ══════════════════════════════════════════
+   DETTAGLIO FILM
+   ══════════════════════════════════════════ */
+function showDetail(fid) {
+  const f = FILMS[fid]; if (!f) return;
+  currentFilmId = fid;
+  document.getElementById('d-title').textContent = f.title;
+  document.getElementById('d-rating').innerHTML = '<i class="ti ti-star"></i> '+f.rating;
+  document.getElementById('d-year').textContent = f.year;
+  document.getElementById('d-dur').textContent = f.dur;
+  document.getElementById('d-genre').textContent = f.genre;
+  document.getElementById('d-synopsis').textContent = f.synopsis;
+  document.getElementById('detail-hero-bg').className = 'detail-hero '+f.bg;
+
+  // Stato bottoni
+  const bl = document.getElementById('btn-addlist');
+  const bh = document.getElementById('btn-heart');
+  if (listedFilms.has(fid)) { bl.classList.add('active-list'); bl.innerHTML='<i class="ti ti-check"></i> In lista'; }
+  else { bl.classList.remove('active-list'); bl.innerHTML='<i class="ti ti-plus"></i> La mia lista'; }
+  if (likedFilms.has(fid)) { bh.classList.add('active-heart'); bh.innerHTML='<i class="ti ti-heart-filled" style="color:var(--accent2);"></i>'; }
+  else { bh.classList.remove('active-heart'); bh.innerHTML='<i class="ti ti-heart"></i>'; }
+
+  // Affinità
+  renderAffinityBadges(fid);
+  // Perché piacerti
+  renderPerche(fid);
+
+  // Trailer
+  const tw = document.getElementById('d-trailer-wrap');
+  tw.innerHTML = f.trailer
+    ? `<button class="trailer-btn" onclick="window.open('${f.trailer.url}','_blank')">
+        <i class="ti ti-player-play"></i>
+        <span class="trailer-label">Guarda il trailer ufficiale</span>
+        <span class="trailer-dur">${f.trailer.dur}</span>
+        <i class="ti ti-external-link" style="font-size:14px;color:var(--muted);"></i>
+       </button>` : '';
+
+  // Streaming
+  document.getElementById('d-streaming').innerHTML = f.streaming.map(s =>
+    `<div class="streaming-badge" style="background:${s.c};color:${s.tc||'#fff'};"><span style="font-size:14px;font-weight:700;">${s.l}</span>${s.n}</div>`
+  ).join('');
+
+  document.getElementById('d-directors').innerHTML = f.directors.map(personCard).join('');
+  document.getElementById('d-cast').innerHTML = f.cast.map(personCard).join('');
+
+  // Film affini con score match
+  const sourceIds = [...selectedFilms, ...likedFilms];
+  const recs = sourceIds.length > 0 ? computeRecommendations(sourceIds) : [];
+  const recMap = {};
+  recs.forEach(r => recMap[r.id] = r.matchPct);
+
+  document.getElementById('d-similar').innerHTML = (f.similar||[]).map(sid => {
+    const sf = FILMS[sid]; if (!sf) return '';
+    const mp = recMap[sid];
+    return `<div class="film-card" onclick="showDetail('${sid}')">
+      <div class="film-poster ${sf.bg}">
+        <div class="film-badge">${sf.rating}</div>
+        ${mp ? `<div style="position:absolute;bottom:6px;right:6px;background:var(--accent);color:#000;border-radius:5px;padding:2px 6px;font-size:9px;font-weight:700;">${mp}%</div>` : ''}
+      </div>
+      <div class="film-title">${sf.title}</div>
+      <div class="film-year">${sf.year} · ${sf.genre}</div>
+    </div>`;
+  }).join('');
+
+  showScreen('detail');
+}
+
+function personCard(pid) {
+  const p = PEOPLE[pid]; if (!p) return '';
+  return `<div class="person-card" onclick="showFilmog('${pid}')">
+    <div class="person-avatar ${p.cls}">${p.av}</div>
+    <div class="person-name">${p.name}</div>
+    <div class="person-role">${p.role}</div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════
+   FILMOGRAFIA
+   ══════════════════════════════════════════ */
+function showFilmog(pid) {
+  const p = PEOPLE[pid]; if (!p) return;
+  const av = document.getElementById('fg-avatar');
+  av.className = 'filmog-avatar '+p.cls; av.textContent = p.av;
+  document.getElementById('fg-name').textContent = p.name;
+  document.getElementById('fg-role').textContent = p.role;
+  document.getElementById('fg-stats').innerHTML = p.stats.map(s =>
+    `<div class="fstat"><div class="fstat-num">${s.n}</div><div class="fstat-lbl">${s.l}</div></div>`
+  ).join('');
+  const years = [...new Set(p.films.map(f=>f.year))].sort((a,b)=>b-a);
+  document.getElementById('fg-filters').innerHTML = ['Tutti',...years.map(String)].map((l,i) =>
+    `<button class="filter-pill ${i===0?'active':'inactive'}" onclick="filterFilmog('${pid}','${l}',this)">${l}</button>`
+  ).join('');
+  renderFilmogList(p.films);
+  document.getElementById('screen-filmog').querySelector('.scroll-area').scrollTop=0;
+  showScreen('filmog');
+}
+function filterFilmog(pid, label, btn) {
+  document.querySelectorAll('#fg-filters .filter-pill').forEach(b=>{b.classList.remove('active');b.classList.add('inactive');});
+  btn.classList.add('active'); btn.classList.remove('inactive');
+  const p = PEOPLE[pid];
+  renderFilmogList(label==='Tutti' ? p.films : p.films.filter(f=>String(f.year)===label));
+}
+function renderFilmogList(films) {
+  document.getElementById('fg-list').innerHTML = films.map(f => `
+    <div class="filmog-list-item" onclick="showDetail('${f.id}')">
+      <div class="filmog-thumb ${f.bg}"></div>
+      <div class="filmog-info">
+        <div class="filmog-film-title">${f.title}</div>
+        <div class="filmog-film-meta">${f.year}</div>
+        <div class="filmog-role-tag">${f.role}</div>
+      </div>
+      <div class="filmog-film-rating"><i class="ti ti-star"></i> ${f.rating}</div>
+    </div>`).join('');
+}
+
+/* MOOD */
+function selectMood(mood, btn) {
+  if (activeMoodBtn) activeMoodBtn.classList.remove('mood-active');
+  btn.classList.add('mood-active'); activeMoodBtn = btn;
+  const data = MOOD_DATA[mood];
+  document.getElementById('mood-result-label').textContent = data.label;
+  document.getElementById('mood-films').innerHTML = data.films.map(f => `
+    <div class="result-film" onclick="showDetail('${f.id}')">
+      <div class="result-poster ${f.bg}">
+        <div style="position:absolute;top:5px;left:5px;background:rgba(0,0,0,0.7);border-radius:5px;padding:2px 6px;font-size:9px;color:var(--accent);font-weight:600;">${f.rating}</div>
+      </div>
+      <div class="result-title">${f.title}</div>
+      <div class="result-rating"><i class="ti ti-star"></i> ${f.year}</div>
+    </div>`).join('');
+  const result = document.getElementById('mood-result');
+  result.classList.add('visible','fade-in');
+  setTimeout(()=>result.classList.remove('fade-in'),400);
+  result.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ═══════════════════════════════════════
+   DETECTIVE COUNTER — free: 3/mese
+   ═══════════════════════════════════════ */
+let detectiveUsed = 0;
+const DETECTIVE_FREE_LIMIT = 3;
+
+function checkDetectiveLimit() {
+  const remaining = DETECTIVE_FREE_LIMIT - detectiveUsed;
+  updateDetectiveCounter();
+  if (detectiveUsed >= DETECTIVE_FREE_LIMIT) {
+    openPaywall();
+    return false;
+  }
+  if (detectiveUsed === DETECTIVE_FREE_LIMIT - 1) {
+    showToast('ti-detective', 'Ultima indagine gratuita disponibile questo mese', 'Plus', true);
+  }
+  return true;
+}
+
+function updateDetectiveCounter() {
+  const remaining = DETECTIVE_FREE_LIMIT - detectiveUsed;
+  // Impostazioni dots
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById('dc' + i);
+    if (dot) dot.className = 'dc-dot ' + (i <= detectiveUsed ? 'used' : 'avail');
+  }
+  const lbl = document.getElementById('dc-label');
+  if (lbl) lbl.textContent = remaining + ' rimast' + (remaining === 1 ? 'a' : 'e');
+  // Banner pips
+  for (let i = 1; i <= 3; i++) {
+    const pip = document.getElementById('banner-pip' + i);
+    if (pip) pip.className = 'dc-pip ' + (i <= detectiveUsed ? 'used' : 'avail');
+  }
+  const blbl = document.getElementById('banner-counter-label');
+  if (blbl) {
+    if (remaining <= 0) blbl.textContent = 'Indagini esaurite questo mese';
+    else blbl.textContent = remaining + ' indagin' + (remaining === 1 ? 'e gratuita' : 'i gratuite') + ' questo mese';
+  }
+  // Banner: lampeggia bordo quando rimane 1
+  const banner = document.getElementById('detective-banner-el');
+  if (banner) {
+    if (remaining === 1) banner.style.borderColor = 'rgba(201,64,64,0.6)';
+    else if (remaining === 0) banner.style.borderColor = 'rgba(201,64,64,0.4)';
+    else banner.style.borderColor = 'rgba(232,180,74,0.4)';
+  }
+}
+
+/* ═══════════════════════════════════════
+   TOAST NOTIFICATION
+   ═══════════════════════════════════════ */
+let toastTimer = null;
+
+function showToast(icon, text, actionText, showAction) {
+  const toast = document.getElementById('toast');
+  const toastIcon = document.getElementById('toast-icon');
+  const toastText = document.getElementById('toast-text');
+  const toastAction = toast.querySelector('.toast-action');
+  toastIcon.className = 'ti ' + icon;
+  toastIcon.style.color = icon.includes('detective') ? 'var(--accent)' : 'var(--accent)';
+  toastText.textContent = text;
+  toastAction.style.display = showAction ? 'block' : 'none';
+  if (actionText) toastAction.textContent = actionText;
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+/* ═══════════════════════════════════════
+   PAYWALL
+   ═══════════════════════════════════════ */
+function openPaywall() {
+  document.getElementById('paywall-overlay').classList.add('show');
+}
+
+function closePaywall() {
+  document.getElementById('paywall-overlay').classList.remove('show');
+}
+
+function paywallSubscribe() {
+  closePaywall();
+  showToast('ti-crown', 'Trial Plus attivato — 7 giorni gratuiti!', '', false);
+  // In produzione: redirect al pagamento
+}
+
+/* ═══════════════════════════════════════
+   IMPOSTAZIONI
+   ═══════════════════════════════════════ */
+function openSettings() {
+  const av = document.getElementById('settings-avatar');
+  const nm = document.getElementById('settings-name');
+  const us = document.getElementById('settings-user');
+  if (av) { av.style.background = userProfile.avatarGrad; av.style.color = userProfile.avatarColor; av.textContent = userProfile.initials; }
+  if (nm) nm.textContent = userProfile.name;
+  if (us) us.textContent = '@' + userProfile.username + (userProfile.city ? ' · ' + userProfile.city : '');
+  updateDetectiveCounter();
+}
+
+</script>
+</body>
+</html>
