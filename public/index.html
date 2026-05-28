@@ -2250,6 +2250,16 @@ function resetDetective() {
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
 }
 
+function detectiveFoundIt(title) {
+  // Nasconde risultati e mostra successo
+  document.getElementById('detective-results').style.display = 'none';
+  document.getElementById('detective-status').style.display  = 'block';
+  document.getElementById('detective-verdict').style.display  = 'block';
+  document.getElementById('detective-verdict-text').textContent =
+    'Caso risolto! Il film era "' + title + '". Ottimo lavoro detective!';
+  document.getElementById('detective-success').style.display = 'block';
+}
+
 function detectiveFeedbackYes() {
   document.getElementById('detective-feedback').style.display = 'none';
   document.getElementById('detective-success').style.display  = 'block';
@@ -2294,10 +2304,10 @@ async function _callDetective() {
   if (thinkEl)  thinkEl.style.display  = 'flex';
 
   const stepTexts = [
-    'Analizzo gli indizi…',
-    'Cerco tra milioni di film…',
-    'Verifico le corrispondenze…',
-    'Ho una pista…'
+    'Analizzo le parole chiave…',
+    'Cerco nel database cinematografico…',
+    'Calcolo le corrispondenze…',
+    'Quasi ci sono…'
   ];
   let si = 0;
   const stepEl = document.getElementById('detective-step-text');
@@ -2305,7 +2315,7 @@ async function _callDetective() {
   const stepTimer = setInterval(() => {
     si = Math.min(si + 1, stepTexts.length - 1);
     if (stepEl) stepEl.textContent = stepTexts[si];
-  }, 900);
+  }, 600);
 
   // Clue tag animati
   const cluesEl = document.getElementById('detective-clues');
@@ -2327,90 +2337,214 @@ async function _callDetective() {
       });
   }
 
-  try {
-    // Chiama il backend Vercel — la chiave Groq è protetta sul server
-    const res = await fetch('/api/detective', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        history: detectiveHistory,
-        shown:   detectiveShown
-      })
+  // Aspetta animazione
+  await new Promise(r => setTimeout(r, 1800));
+  clearInterval(stepTimer);
+
+  // ── MOTORE SEMANTICO LOCALE ─────────────────────────────
+  const fullText = detectiveHistory.join(' ').toLowerCase();
+  const quote    = detectiveHistory.find(h => h.includes('Citazione'));
+  const quoteText = quote ? quote.toLowerCase() : '';
+
+  // Dizionario sinonimi/alias italiani → parole chiave
+  const ALIASES = {
+    'moro': ['moro','otello','shakespeare','gelosia','venezia','africano'],
+    'gelosia': ['gelosia','tradimento','otello','moglie'],
+    'bomba': ['bomba','nucleare','atomica','oppenheimer','scienziato'],
+    'spazio': ['spazio','astronauti','navicella','pianeta','stelle','galassia'],
+    'sogno': ['sogno','inception','subconscio','realta'],
+    'simulazione': ['simulazione','matrix','realta virtuale','computer','hacker'],
+    'robot': ['robot','android','replicante','ia','intelligenza artificiale'],
+    'vampiro': ['vampiro','nosferatu','sangue','immortale','notturno'],
+    'serial killer': ['serial killer','omicidio','detective','investigatore','fbi'],
+    'fantasma': ['fantasma','spirito','soprannaturale','haunted'],
+    'mafia': ['mafia','padrino','corleone','crimine','famiglia','boss'],
+    'guerra': ['guerra','soldati','battaglia','militare','esercito'],
+    'olocausto': ['olocausto','ebrei','nazisti','shoah','campo di concentramento'],
+    'western': ['western','cowboy','pistolero','saloon','selvaggio west','duello'],
+    'animazione': ['animazione','cartoni','disney','pixar','bambini'],
+    'musicale': ['musical','canzoni','ballo','danza','cantare'],
+    'supereroi': ['supereroi','batman','spider-man','marvel','dc','potere'],
+    'tennis': ['tennis','racchetta','campo','partita','campione'],
+    'balletto': ['balletto','danza','ballerina','cigno','teatro'],
+    'postino': ['postino','lettere','posta','pablo neruda','poesia'],
+    'bambina': ['bambina','bambino','bambini','figlio','figlia'],
+    'alieno': ['alieno','extraterrestre','ufo','spazio','invasione'],
+    'viaggio': ['viaggio','avventura','cammino','strada','percorso'],
+    'coreano': ['coreano','korea','seul','asia'],
+    'italiano': ['italiano','italia','roma','napoli','milano'],
+    'francese': ['francese','parigi','france','paris'],
+    'giapponese': ['giapponese','giappone','tokyo','anime','manga'],
+    'psicologico': ['psicologico','mente','pazzia','follia','ossessione'],
+    'droga': ['droga','dipendenza','eroina','cocaina','tossicodipendenza'],
+    'prigione': ['prigione','carcere','galera','detenuto','fuga'],
+    'gioco': ['gioco','scommessa','casino','carte','poker'],
+    'robot': ['robot','macchine','cyborg','intelligenza artificiale'],
+    'amore': ['amore','romantico','innamorato','relazione','coppia'],
+    'morte': ['morte','funerale','lutto','perdita','tragedia'],
+    'vendetta': ['vendetta','ritorsione','rivalsa','rancore'],
+    'mistero': ['mistero','enigma','segreto','indagine','investigazione'],
+  };
+
+  function tokenize(text) {
+    return text.toLowerCase()
+      .replace(/[^a-zA-ZàèéìíòóùúÀÈÉÌÍÒÓÙÚ0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2);
+  }
+
+  function scoreFilm(fid, film, tokens) {
+    let score = 0;
+    const reasons = [];
+    const filmText = [
+      film.title, film.year, film.genre,
+      ...(film.tags || []),
+      film.synopsis || ''
+    ].join(' ').toLowerCase();
+
+    const titleLow = film.title.toLowerCase();
+
+    // 1. Match diretto sul titolo (massimo peso)
+    tokens.forEach(tok => {
+      if (titleLow.includes(tok)) {
+        score += 20;
+        reasons.push('titolo contiene "' + tok + '"');
+      }
     });
 
-    clearInterval(stepTimer);
-    if (statusEl) statusEl.style.display = 'none';
-    if (thinkEl)  thinkEl.style.display  = 'none';
+    // 2. Match su alias/sinonimi
+    Object.entries(ALIASES).forEach(([alias, keywords]) => {
+      const aliasInQuery = tokens.some(t => alias.includes(t) || t.includes(alias));
+      if (aliasInQuery) {
+        keywords.forEach(kw => {
+          if (filmText.includes(kw)) {
+            score += 15;
+            reasons.push('"' + alias + '" → ' + kw);
+          }
+        });
+      }
+    });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || 'Errore server ' + res.status);
+    // 3. Match diretto su tags
+    (film.tags || []).forEach(tag => {
+      tokens.forEach(tok => {
+        if (tag.includes(tok) || tok.includes(tag)) {
+          score += 12;
+          reasons.push('tag: ' + tag);
+        }
+      });
+    });
+
+    // 4. Match su sinossi
+    tokens.forEach(tok => {
+      if (tok.length > 4 && filmText.includes(tok)) {
+        score += 6;
+        reasons.push('trama: ' + tok);
+      }
+    });
+
+    // 5. Match citazione (peso altissimo)
+    if (quoteText) {
+      const qTokens = tokenize(quoteText);
+      let qMatches = 0;
+      qTokens.forEach(qt => {
+        if (qt.length > 3 && filmText.includes(qt)) qMatches++;
+      });
+      if (qMatches > 0) {
+        score += qMatches * 25;
+        reasons.push('citazione corrisponde (' + qMatches + ' parole)');
+      }
     }
 
-    const parsed = await res.json();
+    // 6. Film gia mostrati: penalizza
+    if (detectiveShown.includes(fid)) score -= 1000;
 
-    // Aggiorna film già mostrati
-    detectiveShown = [...detectiveShown, ...(parsed.results||[]).map(r => r.title)];
+    // 7. Boost per film con rating alto se il punteggio e pareggio
+    score += (film.rating || 7) * 0.5;
 
-    // Mostra verdetto
-    const verdictEl = document.getElementById('detective-verdict');
-    const verdTxtEl = document.getElementById('detective-verdict-text');
-    if (verdictEl) verdictEl.style.display = 'block';
-    if (verdTxtEl) verdTxtEl.textContent = parsed.verdict || '';
+    return { score, reason: [...new Set(reasons)].slice(0, 2).join(', ') || 'temi affini' };
+  }
 
-    // Render risultati
-    const resultsEl = document.getElementById('detective-results');
-    const lblEl     = document.getElementById('detective-results-label');
-    const listEl    = document.getElementById('detective-results-list');
-    const fbEl      = document.getElementById('detective-feedback');
-    const bgs = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'];
+  const tokens = tokenize(fullText);
 
-    if (resultsEl) resultsEl.style.display = 'block';
-    if (fbEl)      fbEl.style.display      = 'block';
-    if (lblEl)     lblEl.textContent = parsed.identified_title
-      ? 'Film identificato: ' + parsed.identified_title
-      : 'Film che potrebbero corrispondere';
+  // Calcola score per tutti i film
+  const scored = Object.entries(FILMS).map(([fid, film]) => {
+    const { score, reason } = scoreFilm(fid, film, tokens);
+    const maxScore = 200;
+    const confidence = Math.min(99, Math.max(30, Math.round((score / maxScore) * 100)));
+    return { id: fid, film, score, confidence, reason };
+  })
+  .filter(r => r.score > 0)
+  .sort((a, b) => b.score - a.score)
+  .slice(0, 6);
 
-    if (listEl) {
-      listEl.innerHTML = (parsed.results || []).map((r, idx) => {
-        const bgsIdx = bgs[idx % bgs.length];
-        const isTop = idx === 0;
-        return `<div class="list-item fade-in" style="animation-delay:${idx*60}ms;cursor:pointer;${isTop?'background:rgba(232,180,74,0.05);border-radius:10px;':''}"
-          onclick="showDetail('${r.catalog_id||''}')">
-          <div class="list-thumb ${bgsIdx}" style="position:relative;">
-            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-              <div style="background:rgba(0,0,0,0.72);border-radius:6px;padding:2px 6px;font-size:10px;font-weight:700;color:var(--accent);">${r.confidence||'?'}%</div>
-            </div>
+  // Se nessun risultato, prende i top per rating
+  const results = scored.length > 0 ? scored : Object.entries(FILMS)
+    .map(([id, film]) => ({ id, film, score: film.rating || 7, confidence: 40, reason: 'film consigliato' }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+
+  // Verdetto
+  const top = results[0];
+  const verdict = top && top.confidence > 50
+    ? 'Ho identificato il film: ' + top.film.title + '. ' + (top.reason || 'Corrisponde agli indizi forniti.')
+    : 'Ho trovato alcuni film che potrebbero corrispondere alla tua descrizione.';
+
+  if (statusEl) statusEl.style.display = 'none';
+  if (thinkEl)  thinkEl.style.display  = 'none';
+
+  // Mostra verdetto
+  const verdictEl = document.getElementById('detective-verdict');
+  const verdTxtEl = document.getElementById('detective-verdict-text');
+  if (verdictEl) verdictEl.style.display = 'block';
+  if (verdTxtEl) verdTxtEl.textContent = verdict;
+
+  // Aggiorna film mostrati
+  results.forEach(r => detectiveShown.push(r.id));
+
+  // Render risultati
+  const resultsEl = document.getElementById('detective-results');
+  const lblEl     = document.getElementById('detective-results-label');
+  const listEl    = document.getElementById('detective-results-list');
+  const fbEl      = document.getElementById('detective-feedback');
+  const bgs = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'];
+
+  if (resultsEl) resultsEl.style.display = 'block';
+  if (fbEl)      fbEl.style.display      = 'none'; // nasconde il vecchio feedback
+  if (lblEl)     lblEl.textContent = 'È uno di questi il film che cerchi?';
+
+  if (listEl) {
+    listEl.innerHTML = results.map((r, idx) => {
+      const isTop = idx === 0 && r.confidence > 50;
+      return `<div class="list-item fade-in" style="animation-delay:${idx*60}ms;background:${isTop?'rgba(232,180,74,0.05)':'var(--bg2)'};border-radius:12px;margin-bottom:8px;border:0.5px solid ${isTop?'rgba(232,180,74,0.3)':'#2a2a35'};">
+        <div class="list-thumb ${r.film.bg}" style="position:relative;cursor:pointer;" onclick="showDetail('${r.id}')">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <div style="background:rgba(0,0,0,0.72);border-radius:6px;padding:2px 6px;font-size:10px;font-weight:700;color:var(--accent);">${r.confidence}%</div>
           </div>
-          <div class="list-info" style="flex:1;">
-            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-              <div class="list-title2">${r.title}</div>
-              ${isTop&&parsed.identified_title?'<span style="font-size:9px;background:var(--accent);color:#000;border-radius:8px;padding:1px 7px;font-weight:700;">TROVATO</span>':''}
-            </div>
-            <div class="list-meta2">${r.year||''} · ${r.country||''} · ${r.genre||''}</div>
-            <div style="font-size:11px;color:#bbb;margin-top:3px;font-style:italic;">
-              <i class="ti ti-quote" style="font-size:10px;"></i> ${r.reason||''}
-            </div>
+        </div>
+        <div class="list-info" style="flex:1;cursor:pointer;" onclick="showDetail('${r.id}')">
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+            <div class="list-title2">${r.film.title}</div>
+            ${isTop ? '<span style="font-size:9px;background:var(--accent);color:#000;border-radius:8px;padding:1px 7px;font-weight:700;">TOP</span>' : ''}
           </div>
-          <i class="ti ti-chevron-right" style="color:var(--muted);font-size:16px;flex-shrink:0;"></i>
-        </div>`;
-      }).join('');
-    }
+          <div class="list-meta2">${r.film.year} · ${r.film.genre}</div>
+          <div style="font-size:11px;color:#bbb;margin-top:3px;font-style:italic;">
+            <i class="ti ti-quote" style="font-size:10px;"></i> ${r.reason}
+          </div>
+        </div>
+        <button onclick="detectiveFoundIt('${r.film.title}')"
+          style="flex-shrink:0;background:var(--accent);color:#000;border:none;border-radius:10px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;">
+          È questo!
+        </button>
+      </div>`;
+    }).join('');
 
-  } catch(err) {
-    clearInterval(stepTimer);
-    if (statusEl) statusEl.style.display = 'none';
-    if (thinkEl)  thinkEl.style.display  = 'none';
-    const verdictEl = document.getElementById('detective-verdict');
-    const verdTxtEl = document.getElementById('detective-verdict-text');
-    if (verdictEl) verdictEl.style.display = 'block';
-    if (verdTxtEl) {
-      verdTxtEl.textContent = 'Errore: ' + err.message + '. Controlla la connessione.';
-      verdTxtEl.style.color = 'var(--accent2)';
-    }
-    // Rimostra il form
-    const formEl = document.getElementById('detective-form');
-    if (formEl) formEl.style.display = 'block';
+    // Bottone "Non è nessuno di questi"
+    listEl.innerHTML += `
+      <button onclick="detectiveFeedbackNo()"
+        style="width:100%;margin-top:6px;padding:11px;background:none;border:0.5px solid #2a2a35;border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <i class="ti ti-refresh" style="font-size:14px;"></i> Non è nessuno di questi — continua a cercare
+      </button>`;
   }
 }
 
