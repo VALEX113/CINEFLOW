@@ -4,94 +4,34 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Metodo non consentito' });
-
   const { history, shown } = req.body;
   if (!history || !Array.isArray(history) || history.length === 0)
     return res.status(400).json({ error: 'Descrizione mancante' });
-
-  const GROQ_KEY = process.env.GROQ_API_KEY;
-  if (!GROQ_KEY) return res.status(500).json({ error: 'API key non configurata' });
-
-  const excludeNote = shown && shown.length
-    ? '\nNON mostrare questi film già mostrati: ' + shown.join(', ')
-    : '';
-
+  const GEMINI_KEY = process.env.GEMINI_API_KEY;
+  if (!GEMINI_KEY) return res.status(500).json({ error: 'API key non configurata' });
+  const excludeNote = shown && shown.length ? '\nNON mostrare: ' + shown.join(', ') : '';
   const histText = history.join('\n');
-
-  const systemPrompt = `Sei il più grande esperto cinematografico del mondo. Conosci TUTTI i film mai prodotti in qualsiasi lingua dal 1888 ad oggi.
-
-COMPITO: Identificare il film che l'utente non ricorda dagli indizi forniti.
-
-REGOLE FONDAMENTALI:
-1. Analizza gli indizi con estrema attenzione. Usa la tua intera conoscenza cinematografica.
-2. Una CITAZIONE tra virgolette è l'indizio più importante — identificala con certezza assoluta.
-3. Ragiona come un detective: ogni dettaglio conta.
-4. Dai SEMPRE 5 risultati diversi e plausibili, ordinati per probabilità.
-5. Il primo risultato deve essere il film più probabile.
-6. Sii specifico nella motivazione — spiega ESATTAMENTE quale indizio ti ha portato a quel film.
-7. NON inventare film — usa solo film reali che conosci con certezza.
-8. Se l'utente descrive personaggi, scene o trame specifiche, identificale con precisione.
-
-ESEMPI DI RAGIONAMENTO CORRETTO:
-- "due amici uno bianco uno nero + musica classica vinile + America anni 90 + carcere" = Le ali della libertà (1994) - scena iconica del Mozart trasmesso agli altoparlanti del carcere
-- "il moro geloso della moglie" = Otello (Shakespeare) - il Moro di Venezia che per gelosia uccide Desdemona
-- "serial killer sette peccati capitali" = Seven (1995) - Brad Pitt e Morgan Freeman
-- "la realtà è una simulazione" = Matrix (1999)
-- "bambina hawaii alieno cane" = Lilo & Stitch (2002)`;
-
-  const userPrompt = `INDIZI DELL'UTENTE:
+  const prompt = `Sei il più grande esperto cinematografico del mondo. Conosci TUTTI i film mai prodotti dal 1888 ad oggi in qualsiasi lingua e paese.
+COMPITO: Identificare con certezza il film che l utente non ricorda.
+INDIZI:
 ${histText}
 ${excludeNote}
-
-Rispondi SOLO con JSON valido, zero testo fuori:
-{
-  "verdict": "Ho identificato il film: [TITOLO]. [Spiegazione precisa in prima persona max 25 parole]",
-  "identified_title": "Titolo esatto del film più probabile",
-  "results": [
-    {
-      "title": "Titolo esatto del film",
-      "year": "Anno di uscita",
-      "country": "Paese di produzione",
-      "genre": "Genere principale",
-      "director": "Nome regista",
-      "cast": "Attori principali",
-      "reason": "Quale indizio specifico ha portato a questo film",
-      "confidence": 95
-    }
-  ]
-}
-Includi esattamente 5 risultati reali ordinati per pertinenza decrescente.`;
-
+REGOLE:
+1. Usa tutta la tua conoscenza cinematografica mondiale.
+2. Una CITAZIONE tra virgolette e l indizio piu importante.
+3. Esempi: "due amici bianco e nero musica classica carcere America anni 90" = Le ali della liberta (1994). "moro geloso moglie" = Otello. "serial killer sette peccati" = Seven (1995).
+4. Dai 5 risultati reali ordinati per probabilita.
+5. Sii preciso e spiega quale indizio ha portato a quel film.
+Rispondi SOLO con JSON:
+{"verdict":"Ho identificato: [TITOLO]. [Spiegazione max 20 parole]","identified_title":"Titolo","results":[{"title":"Titolo","year":"Anno","country":"Paese","genre":"Genere","director":"Regista","cast":"Attori","reason":"Motivo","confidence":95}]}`;
   try {
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + GROQ_KEY
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: 1500,
-        temperature: 0.1
-      })
-    });
-
-    if (!groqRes.ok) {
-      const err = await groqRes.json();
-      throw new Error(err.error?.message || 'Errore Groq API: ' + groqRes.status);
-    }
-
-    const data = await groqRes.json();
-    const raw = data.choices?.[0]?.message?.content || '';
-    const clean = raw.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-    return res.status(200).json(parsed);
-
-  } catch (err) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:1500}})});
+    if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || 'Errore Gemini'); }
+    const data = await r.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const clean = raw.replace(/```json|```/g,'').trim();
+    return res.status(200).json(JSON.parse(clean));
+  } catch(err) {
     console.error('Detective error:', err.message);
     return res.status(500).json({ error: err.message });
   }
