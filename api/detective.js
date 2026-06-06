@@ -16,17 +16,10 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GROQ_KEY },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'mixtral-8x7b-32768',
         messages: [
-          { role: 'system', content: `Sei il piu grande esperto cinematografico del mondo con conoscenza enciclopedica di TUTTI i film mai prodotti dal 1888 ad oggi in qualsiasi lingua e paese. Quando identifichi un film, sei preciso e sicuro. Rispondi SOLO con JSON valido, zero testo fuori.` },
-          { role: 'user', content: `Identifica il film da questi indizi: ${testo}${exclude}
-
-Il film descritto e quasi certamente: "Philadelphia" (1993) con Tom Hanks e Denzel Washington se gli indizi includono due protagonisti bianco e nero, musica classica in casa, America anni 90, drammatico. Oppure "Le ali della liberta" se menziona carcere. Oppure altri film simili.
-
-Analizza attentamente e dai 5 risultati.
-
-Rispondi con questo JSON:
-{"verdict":"Ho identificato: TITOLO. Motivazione breve","identified_title":"Titolo","results":[{"title":"Titolo","year":"Anno","country":"Paese","genre":"Genere","director":"Regista","cast":"Attori principali","reason":"Indizio specifico che porta a questo film","confidence":95}]}` }
+          { role: 'system', content: 'Sei un esperto cinematografico mondiale. Conosci TUTTI i film dal 1888 ad oggi. Identifica film da descrizioni vaghe con massima precisione. Rispondi SOLO con JSON valido.' },
+          { role: 'user', content: `Indizi: ${testo}${exclude}\n\nRispondi con JSON:\n{"verdict":"Ho identificato: TITOLO. Motivo","identified_title":"Titolo","results":[{"title":"Titolo","year":"Anno","country":"Paese","genre":"Genere","director":"Regista","cast":"Attori","reason":"Perche corrisponde","confidence":95}]}\n5 risultati reali ordinati per probabilita.` }
         ],
         max_tokens: 1500,
         temperature: 0.1
